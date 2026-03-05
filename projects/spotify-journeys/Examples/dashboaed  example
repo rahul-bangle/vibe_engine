@@ -1,0 +1,330 @@
+import React, { useState } from 'react';
+import { 
+  Home, Search, Library, Play, Pause, SkipBack, SkipForward, 
+  Repeat, Shuffle, Volume2, Mic2, ListMusic, MonitorSpeaker,
+  Heart, Plus, Clock, MoreHorizontal, X, MessageSquare, UserPlus
+} from 'lucide-react';
+
+const App = () => {
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // Mock data for the grid
+  const recentItems = [
+    { title: "Discover Weekly", subtitle: "12 songs • 4h 30m", icon: "🟢", label: "NEW" },
+    { title: "Liked Songs", subtitle: "2,560 songs • 368h 22m", icon: "🤍" },
+    { title: "Mint", subtitle: "36 songs • 6h 30m", icon: "🟢" },
+    { title: "The Joe Rogan Experience", subtitle: "3 new episodes • 12h 20m", img: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=100&h=100&fit=crop", label: "NEW" },
+    { title: "Uppermost Mix", subtitle: "2,560 songs • 368h 22m", img: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&h=100&fit=crop" },
+    { title: "2023 Electronica", subtitle: "83 songs • 45h 23m", icon: "🟢" },
+  ];
+
+  const forYouItems = [
+    { title: "Uppermost Mix", subtitle: "Porter Robinson, 20syl, Uppermost, and the M Machine.", color: "bg-orange-500" },
+    { title: "2010s Mix", subtitle: "TEEMID, Boombox Cartel, and Above & Beyond.", color: "bg-blue-500" },
+    { title: "Mint", subtitle: "Your weekly dose of electronic music.", color: "bg-yellow-600" },
+  ];
+
+  const artistSuggestions = [
+    { name: "Mat Zo", desc: "Matan is an artist recognized for his complex genre-bending style.", img: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=150&h=150&fit=crop" },
+    { name: "Fred Again..", desc: "Fredrik's trademark sound features vocals from unlikely sources.", img: "https://images.unsplash.com/photo-1520127875760-478670176841?w=150&h=150&fit=crop" },
+    { name: "Mint", desc: "Your weekly dose of fresh electronic tracks.", img: "https://images.unsplash.com/photo-1514525253344-a8130a43af31?w=150&h=150&fit=crop" },
+  ];
+
+  return (
+    <div className="flex h-screen bg-black text-white font-sans overflow-hidden select-none">
+      
+      {/* Sidebar */}
+      <aside className="w-64 bg-black flex flex-col p-6 space-y-8 border-r border-neutral-900 hidden lg:flex">
+        <div className="flex items-center space-x-2 text-white">
+          <div className="bg-white rounded-full p-1">
+             <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-white rounded-full"></div>
+             </div>
+          </div>
+          <span className="font-bold text-xl tracking-tight">Spotify</span>
+        </div>
+
+        <nav className="space-y-4">
+          <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Browse</p>
+          <NavItem icon={<Home size={20} />} label="Home" active />
+          <NavItem icon={<Clock size={20} />} label="History" />
+          <NavItem icon={<Heart size={20} />} label="Recommended for you" />
+          <NavItem icon={<ListMusic size={20} />} label="Saved Songs" />
+          <NavItem icon={<Mic2 size={20} />} label="Saved Episodes" />
+        </nav>
+
+        <nav className="flex-1 overflow-y-auto space-y-4 pt-4 custom-scrollbar">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Your Playlists</p>
+            <Plus size={16} className="text-neutral-500 hover:text-white cursor-pointer" />
+          </div>
+          <div className="space-y-3 text-sm text-neutral-400">
+            {["Your Top Songs 2022", "My Playlist #16", "30 Min Run 3", "BizNews Radio", "Sig-fried", "20-Minute Run"].map((pl, i) => (
+              <p key={i} className="hover:text-white cursor-pointer truncate">{pl}</p>
+            ))}
+          </div>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden bg-gradient-to-b from-[#121212] to-black">
+        {/* Header */}
+        <header className="flex items-center justify-between p-4 bg-transparent sticky top-0 z-10 backdrop-blur-md">
+          <div className="flex items-center space-x-4">
+            <div className="flex space-x-2">
+              <button className="bg-black/40 p-1 rounded-full"><SkipBack size={18} /></button>
+              <button className="bg-black/40 p-1 rounded-full opacity-50"><SkipForward size={18} /></button>
+            </div>
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 group-hover:text-white transition-colors" size={18} />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                className="bg-[#242424] rounded-full py-1.5 pl-10 pr-4 text-sm w-64 focus:outline-none focus:ring-1 focus:ring-white transition-all"
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+             <div className="flex space-x-6 text-sm font-medium text-neutral-400 border-b border-transparent">
+                <button className="text-white border-b-2 border-green-500 pb-1">Music</button>
+                <button className="hover:text-white pb-1">Podcasts</button>
+                <button className="hover:text-white pb-1">Audiobooks</button>
+                <button className="hover:text-white pb-1">Artists</button>
+                <button className="hover:text-white pb-1">Albums</button>
+             </div>
+             <div className="flex items-center space-x-2 bg-black/40 rounded-full p-1 pr-3 border border-neutral-800">
+               <img src="https://ui-avatars.com/api/?name=Marc+Dougzy&background=0D8ABC&color=fff" className="w-6 h-6 rounded-full" alt="profile" />
+               <span className="text-xs font-semibold">mcdougzy</span>
+             </div>
+          </div>
+        </header>
+
+        {/* Scrollable Area */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+          
+          {/* New Release Hero Section */}
+          <section className="relative w-full h-72 rounded-2xl overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-400 via-green-500 to-green-700"></div>
+            {/* Visual circle patterns mimicking the image */}
+            <div className="absolute -right-20 -top-20 w-96 h-96 bg-green-300/20 rounded-full blur-3xl"></div>
+            
+            <div className="relative h-full flex items-center p-12">
+              <div className="flex-1 space-y-4">
+                <span className="text-xs font-bold tracking-widest uppercase text-black/60">New Release</span>
+                <h1 className="text-6xl font-black text-white">Uppermost</h1>
+                <p className="text-sm text-white/80 max-w-sm font-medium">
+                  For those who have seen the Earth from space, and for the hundreds and perhaps thousands more who will.
+                </p>
+                <div className="flex items-center space-x-6 pt-2">
+                  <button className="bg-white text-black px-8 py-2.5 rounded-full font-bold flex items-center space-x-2 hover:scale-105 transition-transform">
+                    <Play size={18} fill="black" />
+                    <span>Listen Now</span>
+                  </button>
+                  <div className="flex items-center space-x-4 text-xs font-bold text-white/90">
+                    <span className="flex items-center space-x-1"><ListMusic size={14}/> <span>12 songs</span></span>
+                    <span className="flex items-center space-x-1"><Clock size={14}/> <span>4h 30m</span></span>
+                  </div>
+                </div>
+              </div>
+              <div className="relative">
+                 <img 
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&h=500&fit=crop" 
+                  alt="artist" 
+                  className="w-64 h-64 object-cover rounded-xl shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500 border-4 border-white/10"
+                />
+                <button className="absolute top-2 right-2 p-1 bg-black/20 hover:bg-black/40 rounded-full text-white/60 hover:text-white">
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Good Morning Section */}
+          <section className="space-y-4">
+            <h2 className="text-2xl font-bold flex items-center space-x-2">
+              <span>☀️ Good morning, Marc</span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentItems.map((item, i) => (
+                <div key={i} className="flex items-center bg-[#1a1a1a]/60 hover:bg-[#2a2a2a] transition-colors rounded-lg overflow-hidden group cursor-pointer border border-neutral-900/50">
+                  <div className="w-16 h-16 bg-[#282828] flex items-center justify-center relative">
+                    {item.img ? <img src={item.img} className="w-full h-full object-cover" /> : <span className="text-2xl">{item.icon}</span>}
+                  </div>
+                  <div className="flex-1 p-4 flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm">{item.title}</span>
+                      {item.label && <span className="text-[10px] bg-green-500 text-black font-black px-1.5 py-0.5 rounded-sm">{item.label}</span>}
+                    </div>
+                    <span className="text-xs text-neutral-400">{item.subtitle}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Made Just for You */}
+          <section className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-xl font-bold">Made just for you</h2>
+              <div className="w-4 h-4 rounded-full border border-neutral-600 text-[10px] flex items-center justify-center text-neutral-500">i</div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {forYouItems.map((item, i) => (
+                <div key={i} className="bg-[#181818] p-4 rounded-xl hover:bg-[#282828] transition-all group border border-transparent hover:border-neutral-800">
+                  <div className={`aspect-square ${item.color} rounded-lg mb-4 relative flex items-end p-4 shadow-lg overflow-hidden`}>
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                     <span className="relative font-black text-2xl drop-shadow-md">MIX</span>
+                     <button className="absolute right-4 bottom-4 p-3 bg-green-500 rounded-full text-black shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                        <Play fill="black" size={20} />
+                     </button>
+                  </div>
+                  <h3 className="font-bold mb-1 truncate">{item.title}</h3>
+                  <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed">{item.subtitle}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Artists Might Like */}
+          <section className="space-y-4 pb-12">
+            <h2 className="text-xl font-bold">Artists you might like</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {artistSuggestions.map((artist, i) => (
+                <div key={i} className="flex space-x-4 items-center bg-[#181818]/40 p-3 rounded-xl hover:bg-[#222] transition-colors">
+                  <img src={artist.img} className="w-16 h-16 rounded-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-sm">{artist.name}</h3>
+                    <p className="text-xs text-neutral-500 line-clamp-2">{artist.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </main>
+
+      {/* Right Sidebar - Friend Activity */}
+      <aside className="w-72 bg-black border-l border-neutral-900 p-6 space-y-6 hidden xl:flex flex-col">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Friend Activity</p>
+          <UserPlus size={18} className="text-neutral-500 hover:text-white cursor-pointer" />
+        </div>
+        
+        <div className="space-y-6">
+          <FriendItem name="Adrian Presley" sub="Ongoing Thing, by 20syl" time="2m ago" />
+          <FriendItem name="Ashley Amber" sub="Awake, by Tycho" time="6m ago" />
+          <FriendItem name="Chris Blumenfeld" sub="Step by Step, by Uppermost" time="just now" status="active" />
+          <FriendItem name="John Carmack" sub="The Lex Fridman Podcast" time="5h ago" />
+        </div>
+
+        <button className="mt-4 w-full py-2.5 bg-[#242424] hover:bg-[#333] transition-colors rounded-full text-xs font-bold flex items-center justify-center space-x-2">
+          <Plus size={14} />
+          <span>Invite a friend</span>
+        </button>
+      </aside>
+
+      {/* Music Player Bar */}
+      <footer className="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-neutral-900 h-24 px-4 flex items-center justify-between z-20">
+        {/* Left: Track Info */}
+        <div className="flex items-center space-x-4 w-[30%]">
+          <div className="w-14 h-14 bg-neutral-800 rounded-md overflow-hidden relative group">
+            <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&h=100&fit=crop" alt="now playing" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold hover:underline cursor-pointer">Robot Rock</h4>
+            <p className="text-xs text-neutral-400 hover:underline cursor-pointer">Daft Punk</p>
+          </div>
+          <Heart size={16} className="text-green-500 fill-green-500 ml-2" />
+        </div>
+
+        {/* Center: Controls */}
+        <div className="flex flex-col items-center w-[40%] space-y-2">
+          <div className="flex items-center space-x-6 text-neutral-400">
+            <Shuffle size={16} className="hover:text-white cursor-pointer" />
+            <SkipBack size={20} className="hover:text-white fill-neutral-400 cursor-pointer" />
+            <button 
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="bg-white rounded-full p-2 hover:scale-105 transition-transform"
+            >
+              {isPlaying ? <Pause size={20} fill="black" stroke="black" /> : <Play size={20} fill="black" stroke="black" />}
+            </button>
+            <SkipForward size={20} className="hover:text-white fill-neutral-400 cursor-pointer" />
+            <Repeat size={16} className="hover:text-white cursor-pointer" />
+          </div>
+          <div className="w-full flex items-center space-x-2 text-[10px] text-neutral-400">
+            <span>1:52</span>
+            {/* Waveform Visualization (Mocked) */}
+            <div className="flex-1 h-6 flex items-center justify-center space-x-[2px]">
+              {[...Array(40)].map((_, i) => (
+                <div 
+                  key={i} 
+                  className={`w-[2px] rounded-full transition-all duration-300 ${i < 18 ? 'bg-white' : 'bg-neutral-600'}`}
+                  style={{ height: `${Math.random() * 80 + 20}%` }}
+                ></div>
+              ))}
+            </div>
+            <span>4:54</span>
+          </div>
+        </div>
+
+        {/* Right: Tools */}
+        <div className="flex items-center justify-end space-x-3 w-[30%] text-neutral-400">
+          <Mic2 size={16} className="hover:text-white cursor-pointer" />
+          <ListMusic size={16} className="hover:text-white cursor-pointer" />
+          <MonitorSpeaker size={16} className="hover:text-white cursor-pointer" />
+          <div className="flex items-center space-x-2 group">
+            <Volume2 size={16} className="group-hover:text-white" />
+            <div className="w-24 h-1 bg-neutral-600 rounded-full overflow-hidden">
+               <div className="bg-green-500 w-2/3 h-full"></div>
+            </div>
+          </div>
+          <MoreHorizontal size={16} className="hover:text-white cursor-pointer" />
+        </div>
+      </footer>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #444;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #666;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+const NavItem = ({ icon, label, active = false }) => (
+  <div className={`flex items-center space-x-4 cursor-pointer transition-colors ${active ? 'text-white' : 'text-neutral-400 hover:text-white'}`}>
+    {icon}
+    <span className={`text-sm font-bold ${active ? 'opacity-100' : 'opacity-80'}`}>{label}</span>
+  </div>
+);
+
+const FriendItem = ({ name, sub, time, status }) => (
+  <div className="flex items-start space-x-3 group cursor-pointer">
+    <div className="relative">
+      <img src={`https://ui-avatars.com/api/?name=${name}&background=random`} className="w-10 h-10 rounded-full" />
+      {status === 'active' && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-black rounded-full"></div>}
+    </div>
+    <div className="flex-1 min-w-0">
+      <div className="flex justify-between items-center mb-0.5">
+        <p className="text-sm font-bold text-neutral-200 truncate">{name}</p>
+        <span className="text-[10px] text-neutral-500">{time}</span>
+      </div>
+      <p className="text-xs text-neutral-400 truncate flex items-center space-x-1">
+        <span className="w-2 h-2 rounded-full bg-green-500/50 inline-block mr-1"></span>
+        {sub}
+      </p>
+    </div>
+  </div>
+);
+
+export default App;

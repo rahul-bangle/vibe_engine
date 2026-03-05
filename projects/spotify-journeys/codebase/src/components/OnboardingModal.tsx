@@ -1,8 +1,8 @@
 import React from 'react';
 import { X, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { JourneyPath } from '../context/JourneyContext';
 import { useJourney } from '../context/JourneyContext';
+import type { JourneyPath } from '../context/JourneyContext';
 import { cn } from '../utils/cn';
 
 const PATHS: { id: JourneyPath; title: string; description: string; color: string }[] = [
@@ -32,12 +32,7 @@ interface OnboardingModalProps {
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) => {
-    const { startJourney } = useJourney();
-
-    const handleSelect = (path: JourneyPath) => {
-        startJourney(path);
-        onClose();
-    };
+    const { selectCategory } = useJourney();
 
     return (
         <AnimatePresence>
@@ -47,43 +42,47 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="bg-background-elevated w-full max-w-2xl rounded-xl shadow-modal overflow-hidden border border-zinc-800"
+                        className="bg-background-elevated w-full max-w-4xl rounded-[24px] shadow-modal overflow-hidden border border-white/5"
                     >
-                        <div className="relative p-8">
+                        <div className="relative p-12">
                             <button
                                 onClick={onClose}
-                                className="absolute top-4 right-4 p-2 text-text-subdued hover:text-text-base transition-colors"
+                                className="absolute top-8 right-8 p-3 text-text-subdued hover:text-text-base transition-colors hover:bg-white/5 rounded-full"
                             >
                                 <X className="w-6 h-6" />
                             </button>
 
-                            <div className="text-center mb-10">
-                                <h2 className="text-4xl font-extrabold mb-4 tracking-tight">Choose Your Path</h2>
-                                <p className="text-text-subdued text-lg max-w-md mx-auto">
+                            <div className="text-center mb-12">
+                                <span className="text-primary font-black uppercase tracking-[0.4em] text-xs mb-4 block">Personal Growth</span>
+                                <h2 className="text-5xl font-black mb-4 tracking-tighter">Choose Your Path</h2>
+                                <p className="text-text-subdued text-lg max-w-md mx-auto font-medium">
                                     Select a goal-oriented journey. We'll interleave music and logic to keep you on track.
                                 </p>
                             </div>
 
-                            <div className="grid gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {PATHS.map((path) => (
                                     <button
                                         key={path.id}
-                                        onClick={() => handleSelect(path.id)}
-                                        className="flex items-center gap-6 p-6 bg-zinc-900/50 hover:bg-zinc-800 transition-all rounded-lg border border-transparent hover:border-primary/50 group text-left"
+                                        onClick={() => {
+                                            selectCategory(path.id);
+                                            onClose();
+                                        }}
+                                        className="group relative bg-[#181818] p-8 rounded-[20px] border border-transparent hover:border-white/10 hover:bg-[#282828] transition-all duration-500 text-left hover:scale-[1.02] shadow-xl"
                                     >
-                                        <div className={cn("w-16 h-16 rounded-md shadow-lg flex-shrink-0 flex items-center justify-center", path.color)}>
+                                        <div className={cn("w-16 h-16 rounded-xl shadow-lg flex-shrink-0 flex items-center justify-center mb-6 transition-transform group-hover:scale-110", path.color)}>
                                             <Check className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
-                                        <div className="flex-1">
-                                            <h3 className="text-xl font-bold mb-1">{path.title}</h3>
-                                            <p className="text-text-subdued text-sm line-clamp-2">{path.description}</p>
+                                        <div>
+                                            <h3 className="text-2xl font-black mb-2 tracking-tight group-hover:text-primary transition-colors">{path.title}</h3>
+                                            <p className="text-text-subdued text-sm font-medium leading-relaxed">{path.description}</p>
                                         </div>
                                     </button>
                                 ))}
                             </div>
 
-                            <div className="mt-8 text-center text-xs text-text-subdued uppercase tracking-widest font-bold">
-                                Design Verified • Spotify Journeys v1.0
+                            <div className="mt-12 text-center text-[10px] text-text-subdued uppercase tracking-[0.3em] font-black opacity-50">
+                                Powered by Spotify Journeys Algorithm
                             </div>
                         </div>
                     </motion.div>

@@ -1,44 +1,59 @@
 import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
-import { OnboardingModal } from './components/OnboardingModal';
-import { JourneyPlayer } from './components/JourneyPlayer';
-import { MarketingDashboard } from './components/MarketingDashboard';
 import { Dashboard } from './components/Dashboard';
-import { useJourney } from './context/JourneyContext';
-import { useAuth } from './context/AuthContext';
+import { JourneyPlayer } from './components/JourneyPlayer';
+import { CategoryDetail } from './components/CategoryDetail';
+import { OnboardingModal } from './components/OnboardingModal';
+import { NudgeToast } from './components/NudgeToast';
+import { GlobalMiniPlayer } from './components/GlobalMiniPlayer';
+import { useJourney, JourneyProvider } from './context/JourneyContext';
 
-function App() {
-  const [isModalOpen, setModalOpen] = useState(false);
-  const { state } = useJourney();
-  const { isAuthenticated } = useAuth();
+function AppContent() {
+  const { state, nudgeMessage, clearNudge } = useJourney();
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+
+  const renderMainContent = () => {
+    switch (state.step) {
+      case 1:
+        return <CategoryDetail />;
+      case 2:
+        return <JourneyPlayer />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
+  const hasMiniPlayer = state.globalTrack !== null && state.step !== 2;
 
   return (
-    <div className="flex h-screen bg-black overflow-hidden select-none">
-      <Sidebar onJourneyClick={() => setModalOpen(true)} />
+    <div className={`flex h-screen bg-black overflow-hidden select-none font-sans text-text-base ${hasMiniPlayer ? 'pb-24' : ''}`}>
+      <Sidebar />
 
-      {!isAuthenticated ? (
-        <MarketingDashboard />
-      ) : state.currentPath ? (
-        <main className="flex-1 bg-background-base rounded-lg mt-2 mr-2 mb-2 overflow-y-auto shadow-inner relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-          <div className="p-8 relative z-10">
-            <header className="flex justify-between items-center mb-10">
-              <h1 className="text-4xl font-black tracking-tight">
-                {state.currentPath}
-              </h1>
-            </header>
-            <JourneyPlayer />
-          </div>
-        </main>
-      ) : (
-        <Dashboard />
-      )}
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        {renderMainContent()}
+      </div>
 
       <OnboardingModal
-        isOpen={isModalOpen}
-        onClose={() => setModalOpen(false)}
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
       />
+
+      <NudgeToast
+        show={!!nudgeMessage}
+        message={nudgeMessage || ''}
+        onClose={clearNudge}
+      />
+
+      <GlobalMiniPlayer />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <JourneyProvider>
+      <AppContent />
+    </JourneyProvider>
   );
 }
 
