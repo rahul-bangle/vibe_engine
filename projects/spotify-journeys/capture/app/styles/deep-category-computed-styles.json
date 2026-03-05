@@ -1,0 +1,41 @@
+[
+    {
+        "selector": "h1",
+        "text": "Popular albums",
+        "styles": {
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "color": "rgb(255, 255, 255)",
+            "borderRadius": "0px",
+            "border": "0px none rgb(255, 255, 255)",
+            "padding": "0px",
+            "fontSize": "32px",
+            "fontWeight": "700"
+        }
+    },
+    {
+        "selector": "section",
+        "text": "Popular albums...",
+        "styles": {
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "color": "rgb(179, 179, 179)",
+            "borderRadius": "0px",
+            "border": "0px none rgb(179, 179, 179)",
+            "padding": "0px",
+            "fontSize": "16px",
+            "fontWeight": "400"
+        }
+    },
+    {
+        "selector": "a",
+        "text": "Aashiqui 2",
+        "styles": {
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "color": "rgb(255, 255, 255)",
+            "borderRadius": "0px",
+            "border": "0px none rgb(255, 255, 255)",
+            "padding": "0px",
+            "fontSize": "16px",
+            "fontWeight": "400"
+        }
+    }
+]

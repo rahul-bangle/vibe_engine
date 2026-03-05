@@ -1,0 +1,54 @@
+{
+    "colors": {
+        "background": {
+            "base": "#121212",
+            "highlight": "#1a1a1a",
+            "press": "#000000",
+            "elevated": "#242424",
+            "card": "#181818",
+            "card-hover": "#282828"
+        },
+        "text": {
+            "base": "#ffffff",
+            "subdued": "#b3b3b3",
+            "bright": "#ffffff",
+            "negative": "#ff4136"
+        },
+        "primary": {
+            "base": "#1ed760",
+            "hover": "#1fdf64",
+            "active": "#169c46"
+        }
+    },
+    "typography": {
+        "fontFamily": "CircularSp, CircularSp-Arab, CircularSp-Hebr, CircularSp-Cyrl, CircularSp-Grek, CircularSp-Deva, sans-serif",
+        "sizes": {
+            "display": "2rem",
+            "header": "1.5rem",
+            "body": "1rem",
+            "small": "0.875rem",
+            "tiny": "0.75rem"
+        },
+        "weights": {
+            "bold": "700",
+            "medium": "500",
+            "normal": "400"
+        }
+    },
+    "spacing": {
+        "xs": "4px",
+        "sm": "8px",
+        "md": "16px",
+        "lg": "24px",
+        "xl": "32px"
+    },
+    "radius": {
+        "sm": "4px",
+        "md": "8px",
+        "lg": "12px",
+        "full": "9999px"
+    },
+    "shadows": {
+        "card": "0 8px 24px rgba(0,0,0,0.5)"
+    }
+}

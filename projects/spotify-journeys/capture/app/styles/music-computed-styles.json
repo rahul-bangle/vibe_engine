@@ -1,0 +1,35 @@
+[
+    {
+        "selector": "main",
+        "text": "All\nMusic\nFollowing\nPodcasts\nHome\nPopular albums a",
+        "styles": {
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "color": "rgb(179, 179, 179)",
+            "borderRadius": "0px",
+            "border": "0px none rgb(179, 179, 179)",
+            "padding": "0px"
+        }
+    },
+    {
+        "selector": "button",
+        "text": "Music",
+        "styles": {
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "color": "rgb(179, 179, 179)",
+            "borderRadius": "9999px",
+            "border": "0px none rgb(179, 179, 179)",
+            "padding": "0px"
+        }
+    },
+    {
+        "selector": "[role=\"checkbox\"]",
+        "text": "Music",
+        "styles": {
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "color": "rgb(179, 179, 179)",
+            "borderRadius": "9999px",
+            "border": "0px none rgb(179, 179, 179)",
+            "padding": "0px"
+        }
+    }
+]

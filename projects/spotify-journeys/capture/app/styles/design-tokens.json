@@ -1,0 +1,67 @@
+{
+    "colors": {
+        "background": {
+            "base": "#121212",
+            "highlight": "#1a1a1a",
+            "press": "#000000",
+            "elevated": "#242424"
+        },
+        "text": {
+            "base": "#ffffff",
+            "subdued": "#a7a7a7",
+            "bright": "#1ed760"
+        },
+        "essential": {
+            "base": "#ffffff",
+            "subdued": "#727272",
+            "accent": "#1ed760"
+        }
+    },
+    "typography": {
+        "family": "SpotifyMixUI, CircularSp, circular-sp, Helvetica Neue, helvetica, arial, sans-serif",
+        "size": {
+            "base": "16px",
+            "small": "14px",
+            "large": "24px",
+            "title": "32px"
+        },
+        "weight": {
+            "normal": "400",
+            "bold": "700",
+            "black": "900"
+        }
+    },
+    "spacing": {
+        "none": "0px",
+        "tiny": "4px",
+        "small": "8px",
+        "medium": "16px",
+        "large": "24px",
+        "xlarge": "32px"
+    },
+    "radius": {
+        "small": "4px",
+        "medium": "8px",
+        "large": "12px",
+        "full": "9999px"
+    },
+    "shadows": {
+        "base": "0 8px 24px rgba(0,0,0,0.5)"
+    },
+    "components": {
+        "chip": {
+            "background": "rgba(255, 255, 255, 0.1)",
+            "backgroundActive": "#ffffff",
+            "text": "#ffffff",
+            "textActive": "#000000",
+            "radius": "9999px",
+            "padding": "4px 12px"
+        },
+        "card": {
+            "background": "#181818",
+            "backgroundHover": "#282828",
+            "radius": "8px",
+            "padding": "16px"
+        }
+    }
+}

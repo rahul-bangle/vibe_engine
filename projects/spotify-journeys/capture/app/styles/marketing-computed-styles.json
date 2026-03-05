@@ -1,0 +1,41 @@
+[
+    {
+        "selector": "button",
+        "text": "Log in",
+        "styles": {
+            "backgroundColor": "rgb(255, 255, 255)",
+            "color": "rgb(0, 0, 0)",
+            "borderRadius": "9999px",
+            "border": "0px none rgb(0, 0, 0)",
+            "padding": "8px 32px",
+            "fontSize": "16px",
+            "fontWeight": "700"
+        }
+    },
+    {
+        "selector": "button",
+        "text": "Sign up",
+        "styles": {
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "color": "rgb(179, 179, 179)",
+            "borderRadius": "9999px",
+            "border": "0px none rgb(179, 179, 179)",
+            "padding": "8px 32px",
+            "fontSize": "16px",
+            "fontWeight": "700"
+        }
+    },
+    {
+        "selector": "section",
+        "text": "Trending songs",
+        "styles": {
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "color": "rgb(255, 255, 255)",
+            "borderRadius": "0px",
+            "border": "0px none rgb(255, 255, 255)",
+            "padding": "0px",
+            "fontSize": "24px",
+            "fontWeight": "700"
+        }
+    }
+]

@@ -1,0 +1,63 @@
+:root {
+    /* Colors */
+    --color-background-base: #121212;
+    --color-background-highlight: #1a1a1a;
+    --color-background-press: #000000;
+    --color-background-elevated: #242424;
+
+    --color-text-base: #ffffff;
+    --color-text-subdued: #a7a7a7;
+    --color-text-bright: #1ed760;
+
+    --color-essential-base: #ffffff;
+    --color-essential-subdued: #727272;
+    --color-essential-accent: #1ed760;
+
+    /* Typography */
+    --font-family-base: "SpotifyMixUI", "CircularSp", "Helvetica Neue", helvetica, arial, sans-serif;
+    --font-size-base: 16px;
+    --font-size-small: 14px;
+    --font-size-large: 24px;
+    --font-size-title: 32px;
+
+    /* Spacing */
+    --spacing-tiny: 4px;
+    --spacing-small: 8px;
+    --spacing-medium: 16px;
+    --spacing-large: 24px;
+
+    /* Radius */
+    --radius-small: 4px;
+    --radius-medium: 8px;
+    --radius-large: 12px;
+    --radius-full: 9999px;
+
+    /* Transitions */
+    --transition-base: all 0.2s ease;
+}
+
+/* Component Patterns */
+.spotify-card {
+    background: var(--color-background-highlight);
+    border-radius: var(--radius-medium);
+    padding: var(--spacing-medium);
+    transition: var(--transition-base);
+}
+
+.spotify-card:hover {
+    background: var(--color-background-elevated);
+}
+
+.spotify-chip {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-base);
+    border-radius: var(--radius-full);
+    padding: 4px 12px;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+.spotify-chip--active {
+    background: var(--color-text-base);
+    color: var(--color-background-base);
+}

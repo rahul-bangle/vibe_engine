@@ -1,0 +1,406 @@
+{
+    "color": {
+        "$description": "Color tokens extracted from open.spotify.com",
+        "background": {
+            "base": {
+                "$value": "#121212",
+                "$type": "color",
+                "$description": "Primary app background — main content area"
+            },
+            "elevated": {
+                "$value": "#181818",
+                "$type": "color",
+                "$description": "Elevated surface — cards, sidebar content blocks"
+            },
+            "highlight": {
+                "$value": "#282828",
+                "$type": "color",
+                "$description": "Hover state background, active row highlight"
+            },
+            "press": {
+                "$value": "#333333",
+                "$type": "color",
+                "$description": "Pressed/active state background"
+            },
+            "tinted": {
+                "$value": "#1a1a1a",
+                "$type": "color",
+                "$description": "Subtle tint above base — sidebar background area"
+            },
+            "black": {
+                "$value": "#000000",
+                "$type": "color",
+                "$description": "Pure black — top nav bar, now playing bar, bottom bar"
+            },
+            "overlay": {
+                "$value": "rgba(0, 0, 0, 0.7)",
+                "$type": "color",
+                "$description": "Modal/dialog overlay backdrop"
+            }
+        },
+        "text": {
+            "base": {
+                "$value": "#ffffff",
+                "$type": "color",
+                "$description": "Primary text — headings, active items, song titles"
+            },
+            "subdued": {
+                "$value": "#b3b3b3",
+                "$type": "color",
+                "$description": "Secondary text — artist names, metadata, descriptions"
+            },
+            "faint": {
+                "$value": "#a7a7a7",
+                "$type": "color",
+                "$description": "Tertiary text — timestamps, labels, footer links"
+            }
+        },
+        "primary": {
+            "$value": "#1db954",
+            "$type": "color",
+            "$description": "Spotify green — play button, CTA, primary accent"
+        },
+        "primary-hover": {
+            "$value": "#1ed760",
+            "$type": "color",
+            "$description": "Spotify green hover — lighter green on hover"
+        },
+        "banner": {
+            "background": {
+                "$value": "#6a35bd",
+                "$type": "color",
+                "$description": "Purple banner — Preview of Spotify / promo bar"
+            }
+        },
+        "button": {
+            "outline": {
+                "$value": "#878787",
+                "$type": "color",
+                "$description": "Outline button border (e.g., 'Explore Premium', filter pills)"
+            },
+            "outline-hover": {
+                "$value": "#ffffff",
+                "$type": "color",
+                "$description": "Outline button border on hover"
+            },
+            "login": {
+                "$value": "#ffffff",
+                "$type": "color",
+                "$description": "Login button background — white pill"
+            },
+            "login-text": {
+                "$value": "#000000",
+                "$type": "color",
+                "$description": "Login button text — black on white"
+            }
+        },
+        "filter": {
+            "active": {
+                "$value": "#ffffff",
+                "$type": "color",
+                "$description": "Active filter chip background (e.g., 'All' tab)"
+            },
+            "active-text": {
+                "$value": "#000000",
+                "$type": "color",
+                "$description": "Active filter chip text color"
+            },
+            "inactive": {
+                "$value": "#2a2a2a",
+                "$type": "color",
+                "$description": "Inactive filter chip background (e.g., 'Music', 'Podcasts')"
+            },
+            "inactive-text": {
+                "$value": "#ffffff",
+                "$type": "color",
+                "$description": "Inactive filter chip text"
+            }
+        },
+        "now-playing": {
+            "progress": {
+                "$value": "#1db954",
+                "$type": "color",
+                "$description": "Now playing progress bar fill — green"
+            },
+            "progress-bg": {
+                "$value": "#4d4d4d",
+                "$type": "color",
+                "$description": "Now playing progress bar track — grey"
+            }
+        },
+        "success": {
+            "$value": "#1db954",
+            "$type": "color",
+            "$description": "Success / checkmark indicator (reuses green)"
+        }
+    },
+    "font": {
+        "$description": "Typography tokens from Spotify Web Player",
+        "family": {
+            "primary": {
+                "$value": "SpotifyMixUI, CircularSp, CircularSp-Arab, CircularSp-Hebr, CircularSp-Cyrl, CircularSp-Grek, CircularSp-Deva, var(--fallback-fonts, sans-serif)",
+                "$type": "fontFamily",
+                "$description": "Spotify's primary UI font stack"
+            },
+            "title": {
+                "$value": "SpotifyMixUI, CircularSp-Bold, CircularSp-Arab, CircularSp-Hebr, CircularSp-Cyrl, CircularSp-Grek, CircularSp-Deva, var(--fallback-fonts, sans-serif)",
+                "$type": "fontFamily",
+                "$description": "Spotify title/heading font variant"
+            }
+        },
+        "size": {
+            "2xs": {
+                "$value": "11px",
+                "$type": "dimension",
+                "$description": "Micro labels — song count badges, metadata dots"
+            },
+            "xs": {
+                "$value": "12px",
+                "$type": "dimension",
+                "$description": "Small labels — 'Playlist', artist under sidebar items"
+            },
+            "sm": {
+                "$value": "14px",
+                "$type": "dimension",
+                "$description": "Default body — nav items, song metadata, sidebar text"
+            },
+            "base": {
+                "$value": "16px",
+                "$type": "dimension",
+                "$description": "Standard body text — descriptions, list items"
+            },
+            "md": {
+                "$value": "18px",
+                "$type": "dimension",
+                "$description": "Subtitles and featured text"
+            },
+            "lg": {
+                "$value": "24px",
+                "$type": "dimension",
+                "$description": "Section headings — 'Popular albums and singles'"
+            },
+            "xl": {
+                "$value": "32px",
+                "$type": "dimension",
+                "$description": "Page titles — 'Home', section names"
+            },
+            "2xl": {
+                "$value": "48px",
+                "$type": "dimension",
+                "$description": "Hero text — album/playlist titles"
+            },
+            "3xl": {
+                "$value": "64px",
+                "$type": "dimension",
+                "$description": "Large hero titles — album name on detail view"
+            }
+        },
+        "weight": {
+            "regular": {
+                "$value": 400,
+                "$type": "fontWeight",
+                "$description": "Normal body text"
+            },
+            "medium": {
+                "$value": 500,
+                "$type": "fontWeight",
+                "$description": "Slightly emphasized labels"
+            },
+            "bold": {
+                "$value": 700,
+                "$type": "fontWeight",
+                "$description": "Headings, song titles, nav active items"
+            },
+            "extrabold": {
+                "$value": 800,
+                "$type": "fontWeight",
+                "$description": "Hero titles — album names on detail pages"
+            }
+        },
+        "line-height": {
+            "tight": {
+                "$value": 1.1,
+                "$type": "number",
+                "$description": "Hero titles, album names"
+            },
+            "snug": {
+                "$value": 1.3,
+                "$type": "number",
+                "$description": "Headings, section titles"
+            },
+            "normal": {
+                "$value": 1.5,
+                "$type": "number",
+                "$description": "Body text, descriptions"
+            },
+            "relaxed": {
+                "$value": 1.6,
+                "$type": "number",
+                "$description": "Paragraph text, footer content"
+            }
+        }
+    },
+    "spacing": {
+        "$description": "Spacing scale — based on 4px base unit",
+        "0": {
+            "$value": "0px",
+            "$type": "dimension"
+        },
+        "1": {
+            "$value": "4px",
+            "$type": "dimension",
+            "$description": "Micro — icon margins"
+        },
+        "2": {
+            "$value": "8px",
+            "$type": "dimension",
+            "$description": "Tight — inline gaps, icon padding"
+        },
+        "3": {
+            "$value": "12px",
+            "$type": "dimension",
+            "$description": "Compact — filter chip padding, card inner gap"
+        },
+        "4": {
+            "$value": "16px",
+            "$type": "dimension",
+            "$description": "Standard — section padding, card gaps"
+        },
+        "5": {
+            "$value": "20px",
+            "$type": "dimension",
+            "$description": "Comfortable — sidebar item vertical spacing"
+        },
+        "6": {
+            "$value": "24px",
+            "$type": "dimension",
+            "$description": "Large — section margins, heading spacing"
+        },
+        "8": {
+            "$value": "32px",
+            "$type": "dimension",
+            "$description": "XL — major section separators"
+        },
+        "10": {
+            "$value": "40px",
+            "$type": "dimension",
+            "$description": "2XL — page-level padding"
+        },
+        "12": {
+            "$value": "48px",
+            "$type": "dimension",
+            "$description": "3XL — hero section spacing"
+        },
+        "16": {
+            "$value": "64px",
+            "$type": "dimension",
+            "$description": "4XL — top nav height area"
+        }
+    },
+    "radius": {
+        "$description": "Border radius tokens",
+        "none": {
+            "$value": "0px",
+            "$type": "dimension",
+            "$description": "No rounding — square elements"
+        },
+        "sm": {
+            "$value": "4px",
+            "$type": "dimension",
+            "$description": "Subtle — card images, list items"
+        },
+        "md": {
+            "$value": "6px",
+            "$type": "dimension",
+            "$description": "Standard — album cards, containers"
+        },
+        "lg": {
+            "$value": "8px",
+            "$type": "dimension",
+            "$description": "Elevated — modals, dialog boxes"
+        },
+        "xl": {
+            "$value": "12px",
+            "$type": "dimension",
+            "$description": "Prominent — sidebar playlist items"
+        },
+        "full": {
+            "$value": "9999px",
+            "$type": "dimension",
+            "$description": "Pill/circle — filter chips, avatar, play button, login button"
+        }
+    },
+    "shadow": {
+        "$description": "Box shadow tokens",
+        "card": {
+            "$value": "0px 8px 24px rgba(0, 0, 0, 0.5)",
+            "$type": "shadow",
+            "$description": "Card hover elevation — album/playlist cards"
+        },
+        "modal": {
+            "$value": "0px 16px 48px rgba(0, 0, 0, 0.7)",
+            "$type": "shadow",
+            "$description": "Modal dialog shadow — signup modal"
+        },
+        "nav": {
+            "$value": "0px 2px 4px rgba(0, 0, 0, 0.3)",
+            "$type": "shadow",
+            "$description": "Top navigation bar subtle shadow"
+        }
+    },
+    "size": {
+        "$description": "Fixed component sizes",
+        "sidebar-width": {
+            "$value": "302px",
+            "$type": "dimension",
+            "$description": "Left sidebar width — resizable, default ~302px"
+        },
+        "now-playing-height": {
+            "$value": "72px",
+            "$type": "dimension",
+            "$description": "Bottom now-playing bar height"
+        },
+        "top-nav-height": {
+            "$value": "64px",
+            "$type": "dimension",
+            "$description": "Top navigation bar height"
+        },
+        "album-card": {
+            "$value": "180px",
+            "$type": "dimension",
+            "$description": "Album/playlist card thumbnail width"
+        },
+        "avatar-sm": {
+            "$value": "28px",
+            "$type": "dimension",
+            "$description": "Small avatar — profile icon in top nav"
+        },
+        "avatar-md": {
+            "$value": "48px",
+            "$type": "dimension",
+            "$description": "Medium avatar — sidebar playlist thumbnails"
+        },
+        "play-button-lg": {
+            "$value": "48px",
+            "$type": "dimension",
+            "$description": "Large green play button"
+        }
+    },
+    "_meta": {
+        "source": "Vibe Engine Tokenize Agent v1.0",
+        "target": "https://open.spotify.com",
+        "project": "spotify-journeys",
+        "extractionMode": "SCREENSHOT_ONLY",
+        "date": "2026-03-05",
+        "format": "W3C DTCG v2025.10",
+        "conflicts": [],
+        "screenshotsAnalyzed": [
+            "dashboard/screenshots/user_dashboard_desktop.png",
+            "dashboard/screenshots/album_detail_logged_in.png",
+            "dashboard/screenshots/header_filters_anchor.png",
+            "marketing/screenshots/homepage_desktop_1920.png",
+            "marketing/screenshots/signup_modal_desktop.png"
+        ],
+        "notes": "No computed-styles.json available. All values extracted from visual screenshot analysis and DOM accessibility tree snapshots. Font stack based on Spotify's known web fonts."
+    }
+}

@@ -1,0 +1,183 @@
+{
+    "elements": [
+        {
+            "selector": "main",
+            "element": "main",
+            "id": null,
+            "classes": [
+                "J6wP3V0xzh0Hj_MS"
+            ],
+            "role": null,
+            "text": "All\nMusic\nPodcasts\nHome\nPopular albums and singles",
+            "dimensions": {
+                "width": "697.671px",
+                "height": "484.832px",
+                "top": "63.988800048828125px",
+                "left": "295.975830078125px"
+            },
+            "styles": {
+                "backgroundColor": "rgba(0, 0, 0, 0)",
+                "color": "rgb(179, 179, 179)",
+                "fontFamily": "SpotifyMixUI, CircularSp-Arab, CircularSp-Hebr, CircularSp-Cyrl, CircularSp-Grek, CircularSp-Deva, \"Helvetica Neue\", helvetica, arial, \"Hiragino Sans\", \"Hiragino Kaku Gothic ProN\", Meiryo, \"MS Gothic\", sans-serif",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "padding": "0px",
+                "margin": "0px",
+                "borderRadius": "0px",
+                "border": "0px none rgb(179, 179, 179)",
+                "boxShadow": "none",
+                "display": "block",
+                "flexDirection": "row",
+                "gap": "normal",
+                "zIndex": "auto",
+                "position": "static"
+            }
+        },
+        {
+            "selector": "[aria-label=\"Your Library\"]",
+            "element": "div",
+            "id": null,
+            "classes": [],
+            "role": "grid",
+            "text": "Liked Songs\n\nPlaylist • 161 songs\n\nYour Episodes\n\n",
+            "dimensions": {
+                "width": "264.018px",
+                "height": "1343.99px",
+                "top": "212.89801025390625px",
+                "left": "15.978774070739746px"
+            },
+            "styles": {
+                "backgroundColor": "rgba(0, 0, 0, 0)",
+                "color": "rgb(179, 179, 179)",
+                "fontFamily": "SpotifyMixUI, CircularSp-Arab, CircularSp-Hebr, CircularSp-Cyrl, CircularSp-Grek, CircularSp-Deva, \"Helvetica Neue\", helvetica, arial, \"Hiragino Sans\", \"Hiragino Kaku Gothic ProN\", Meiryo, \"MS Gothic\", sans-serif",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "padding": "0px",
+                "margin": "0px",
+                "borderRadius": "0px",
+                "border": "0px none rgb(179, 179, 179)",
+                "boxShadow": "none",
+                "display": "block",
+                "flexDirection": "row",
+                "gap": "normal",
+                "zIndex": "auto",
+                "position": "static"
+            }
+        },
+        {
+            "selector": "[role=\"checkbox\"][text=\"Music\"]",
+            "element": "button",
+            "id": null,
+            "classes": [
+                "LegacyChip__LegacyChipComponent-sc-tzfq94-0",
+                "fJQBhR",
+                "encore-text-body-small"
+            ],
+            "role": "checkbox",
+            "text": "Music",
+            "dimensions": {
+                "width": "60.9228px",
+                "height": "31.987px",
+                "top": "79.98231506347656px",
+                "left": "384.5519104003906px"
+            },
+            "styles": {
+                "backgroundColor": "rgba(0, 0, 0, 0)",
+                "color": "rgb(179, 179, 179)",
+                "fontFamily": "SpotifyMixUI, CircularSp-Arab, CircularSp-Hebr, CircularSp-Cyrl, CircularSp-Grek, CircularSp-Deva, \"Helvetica Neue\", helvetica, arial, \"Hiragino Sans\", \"Hiragino Kaku Gothic ProN\", Meiryo, \"MS Gothic\"",
+                "fontSize": "14px",
+                "fontWeight": "400",
+                "padding": "0px",
+                "margin": "0px 0px 8px",
+                "borderRadius": "9999px",
+                "border": "0px none rgb(179, 179, 179)",
+                "boxShadow": "none",
+                "display": "inline-flex",
+                "flexDirection": "row",
+                "gap": "normal",
+                "zIndex": "auto",
+                "position": "relative"
+            }
+        },
+        {
+            "selector": "[role=\"checkbox\"][text=\"Podcasts\"]",
+            "element": "button",
+            "id": null,
+            "classes": [
+                "LegacyChip__LegacyChipComponent-sc-tzfq94-0",
+                "fJQBhR",
+                "encore-text-body-small"
+            ],
+            "role": "checkbox",
+            "text": "Podcasts",
+            "dimensions": {
+                "width": "81.2795px",
+                "height": "31.987px",
+                "top": "79.98231506347656px",
+                "left": "453.46405029296875px"
+            },
+            "styles": {
+                "backgroundColor": "rgba(0, 0, 0, 0)",
+                "color": "rgb(179, 179, 179)",
+                "fontFamily": "SpotifyMixUI, CircularSp-Arab, CircularSp-Hebr, CircularSp-Cyrl, CircularSp-Grek, CircularSp-Deva, \"Helvetica Neue\", helvetica, arial, \"Hiragino Sans\", \"Hiragino Kaku Gothic ProN\", Meiryo, \"MS Gothic\"",
+                "fontSize": "14px",
+                "fontWeight": "400",
+                "padding": "0px",
+                "margin": "0px 0px 8px",
+                "borderRadius": "9999px",
+                "border": "0px none rgb(179, 179, 179)",
+                "boxShadow": "none",
+                "display": "inline-flex",
+                "flexDirection": "row",
+                "gap": "normal",
+                "zIndex": "auto",
+                "position": "relative"
+            }
+        },
+        {
+            "selector": "[data-testid=\"now-playing-bar\"]",
+            "element": "aside",
+            "id": null,
+            "classes": [
+                "Q2n2bdBXy28oQWoC",
+                "nRWw2cACzspvO3GF"
+            ],
+            "role": null,
+            "text": "Balam Pichkari\nPritam\n, Vishal Dadlani\n, Shalmali ",
+            "dimensions": {
+                "width": "1273.64px",
+                "height": "71.9929px",
+                "top": "556.8101806640625px",
+                "left": "7.989387035369873px"
+            },
+            "styles": {
+                "backgroundColor": "rgba(0, 0, 0, 0)",
+                "color": "rgb(179, 179, 179)",
+                "fontFamily": "SpotifyMixUI, CircularSp-Arab, CircularSp-Hebr, CircularSp-Cyrl, CircularSp-Grek, CircularSp-Deva, \"Helvetica Neue\", helvetica, arial, \"Hiragino Sans\", \"Hiragino Kaku Gothic ProN\", Meiryo, \"MS Gothic\", sans-serif",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "padding": "0px",
+                "margin": "0px",
+                "borderRadius": "0px",
+                "border": "0px none rgb(179, 179, 179)",
+                "boxShadow": "none",
+                "display": "flex",
+                "flexDirection": "column",
+                "gap": "normal",
+                "zIndex": "auto",
+                "position": "static"
+            }
+        }
+    ],
+    "cssVariables": {
+        "--background-base": "#121212",
+        "--background-highlight": "#1a1a1a",
+        "--background-press": "#000",
+        "--text-base": "#ffffff",
+        "--text-subdued": "#a7a7a7",
+        "--essential-subdued": "#727272",
+        "--essential-base": "#fff",
+        "--essential-bright-accent": "#1ed760",
+        "--decorative-subdued": "#242424"
+    }
+}
