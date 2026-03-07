@@ -1,54 +1,36 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import type { Track } from '../services/spotifyService';
+import type { JourneyPath, JourneyState, JourneyContextType } from '../types/journey';
+import { supabase } from '../services/supabaseClient';
 
-export type JourneyPath = 'English Vocabulary Builder' | 'Communication Skills' | 'Productivity Habits';
-
-interface JourneyState {
-    currentPath: JourneyPath | null;
-    step: number;
-    isCompleted: boolean;
-    streak: number;
-    lastCompletedAt: string | null;
-    completionHistory: Record<string, boolean>; // ISO date string -> boolean
-    recentlyPlayed: string[]; // Track IDs
-    activeFilter: string;
-    globalTrack: any | null;
-    isGlobalPlaying: boolean;
-}
-
-interface JourneyContextType {
-    state: JourneyState;
-    selectCategory: (path: JourneyPath) => void;
-    startJourney: () => void;
-    resetJourney: () => void;
-    nextStep: () => void;
-    completeDay: () => void;
-    nudgeMessage: string | null;
-    triggerNudge: (message: string) => void;
-    clearNudge: () => void;
-    setActiveFilter: (filter: string) => void;
-    goBack: () => void;
-    addToRecentlyPlayed: (trackId: string) => void;
-    playTrack: (track: any) => void;
-    setGlobalPlaying: (playing: boolean) => void;
-}
-
-const JourneyContext = createContext<JourneyContextType | undefined>(undefined);
+export const JourneyContext = createContext<JourneyContextType | undefined>(undefined);
 
 export const JourneyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [state, setState] = useState<JourneyState>(() => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const [state, setState] = useState<Omit<JourneyState, 'currentPath' | 'step'>>(() => {
         const saved = localStorage.getItem('spotify-journey-state');
         if (saved) {
             const parsed = JSON.parse(saved);
             return {
-                ...parsed,
+                profileId: parsed.profileId || null,
+                userName: parsed.userName || null,
+                isCompleted: parsed.isCompleted || false,
+                streak: parsed.streak || 0,
+                lastCompletedAt: parsed.lastCompletedAt || null,
+                completionHistory: parsed.completionHistory || {},
                 recentlyPlayed: parsed.recentlyPlayed || [],
                 activeFilter: parsed.activeFilter || 'All',
-                completionHistory: parsed.completionHistory || {}
+                globalTrack: parsed.globalTrack || null,
+                isGlobalPlaying: parsed.isGlobalPlaying || false,
+                onboardingStep: parsed.onboardingStep || (parsed.userName ? null : 'naming')
             };
         }
         return {
-            currentPath: null,
-            step: 0,
+            profileId: null,
+            userName: null,
             isCompleted: false,
             streak: 0,
             lastCompletedAt: null,
@@ -56,26 +38,127 @@ export const JourneyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             recentlyPlayed: [],
             activeFilter: 'All',
             globalTrack: null,
-            isGlobalPlaying: false
+            isGlobalPlaying: false,
+            onboardingStep: 'naming'
         };
     });
 
+    // Derive currentPath and step from URL
+    const { currentPath, step } = useMemo(() => {
+        const path = location.pathname;
+        if (path === '/') {
+            return { currentPath: null, step: 0 };
+        } else if (path.startsWith('/category/')) {
+            const categoryName = decodeURIComponent(path.replace('/category/', '')) as JourneyPath;
+            return { currentPath: categoryName, step: 1 };
+        } else if (path.startsWith('/player/')) {
+            const categoryName = decodeURIComponent(path.replace('/player/', '')) as JourneyPath;
+            return { currentPath: categoryName, step: 2 };
+        }
+        return { currentPath: null, step: 0 };
+    }, [location.pathname]);
+
+    const fullState = useMemo<JourneyState>(() => ({
+        ...state,
+        currentPath,
+        step
+    }), [state, currentPath, step]);
+
     const [nudgeMessage, setNudgeMessage] = useState<string | null>(null);
 
+    // Sync state with Supabase when important fields change
     useEffect(() => {
+        const syncProfile = async () => {
+            if (state.profileId && state.userName) {
+                await supabase
+                    .from('profiles')
+                    .update({
+                        streak: state.streak,
+                        last_completed_at: state.lastCompletedAt
+                    })
+                    .eq('id', state.profileId);
+            }
+        };
+        syncProfile();
         localStorage.setItem('spotify-journey-state', JSON.stringify(state));
     }, [state]);
 
+    const setUserName = async (name: string) => {
+        // First check if a profile with this name exists
+        const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('name', name)
+            .single();
+
+        if (existingProfile) {
+            setState(prev => ({
+                ...prev,
+                profileId: existingProfile.id,
+                userName: existingProfile.name,
+                streak: existingProfile.streak || prev.streak,
+                lastCompletedAt: existingProfile.last_completed_at || prev.lastCompletedAt,
+                onboardingStep: 'dashboard'
+            }));
+        } else {
+            // Create new profile
+            const { data: newProfile, error } = await supabase
+                .from('profiles')
+                .insert([{ name, streak: 0 }])
+                .select()
+                .single();
+
+            if (newProfile) {
+                setState(prev => ({
+                    ...prev,
+                    profileId: newProfile.id,
+                    userName: newProfile.name,
+                    onboardingStep: 'dashboard'
+                }));
+            } else if (error) {
+                // Fallback for offline/no supabase setup
+                setState(prev => ({ ...prev, userName: name, onboardingStep: 'dashboard' }));
+            }
+        }
+    };
+
+    const updateOnboardingStep = (step: JourneyState['onboardingStep']) => {
+        setState(prev => ({ ...prev, onboardingStep: step }));
+    };
+
     const selectCategory = (path: JourneyPath) => {
-        setState(prev => ({ ...prev, currentPath: path, step: 1, isCompleted: false }));
+        setState(prev => ({ ...prev, isCompleted: false }));
+        trackEvent('NAV_CATEGORY', path);
+        navigate(`/category/${encodeURIComponent(path)}`);
     };
 
     const startJourney = () => {
-        setState(prev => ({ ...prev, step: 2 }));
+        trackEvent('JOURNEY_START', currentPath || 'unknown');
+        if (state.onboardingStep === 'pointing_start') {
+            updateOnboardingStep('playing');
+        }
+        if (currentPath) {
+            navigate(`/player/${encodeURIComponent(currentPath)}`);
+        } else {
+            navigate('/player/Focus');
+        }
     };
 
     const resetJourney = () => {
-        setState(prev => ({ ...prev, currentPath: null, step: 0, isCompleted: false, activeFilter: 'All' }));
+        trackEvent('NAV_RESET', 'home');
+        setState(prev => ({ ...prev, isCompleted: false, activeFilter: 'All' }));
+        navigate('/');
+    };
+
+    const continueLearning = () => {
+        trackEvent('NAV_CONTINUE', 'journeys');
+        setState(prev => ({ ...prev, isCompleted: false }));
+        // No navigation here - we want to stay in the player and continue
+    };
+
+    const resetState = () => {
+        localStorage.removeItem('spotify-journey-state');
+        window.location.reload();
     };
 
     const addToRecentlyPlayed = (trackId: string) => {
@@ -90,18 +173,20 @@ export const JourneyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const setActiveFilter = (filter: string) => {
+        trackEvent('NAV_FILTER', filter);
         setState(prev => ({ ...prev, activeFilter: filter }));
     };
 
     const goBack = () => {
-        setState(prev => ({ ...prev, step: Math.max(0, prev.step - 1) }));
+        trackEvent('NAV_BACK', 'browser');
+        navigate(-1);
     };
 
     const nextStep = () => {
-        setState(prev => ({ ...prev, step: prev.step + 1 }));
+        if (step === 1) navigate('/player');
     };
 
-    const completeDay = () => {
+    const completeDay = async () => {
         const today = new Date().toISOString().split('T')[0];
         const lastCompleted = state.lastCompletedAt ? new Date(state.lastCompletedAt).toISOString().split('T')[0] : null;
 
@@ -115,20 +200,29 @@ export const JourneyProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 newStreak += 1;
             } else if (diffDays > 1) {
                 newStreak = 1;
-            } else if (diffDays === 0) {
-                // Already completed today, don't increment streak but keep it
             }
         } else {
             newStreak = 1;
         }
 
+        const now = new Date().toISOString();
+        
+        // Optimistic update
         setState(prev => ({
             ...prev,
             isCompleted: true,
             streak: newStreak,
-            lastCompletedAt: new Date().toISOString(),
+            lastCompletedAt: now,
             completionHistory: { ...prev.completionHistory, [today]: true }
         }));
+
+        // Log progress to Supabase
+        if (state.profileId) {
+            await supabase.from('journey_progress').insert([{
+                profile_id: state.profileId,
+                path_name: currentPath || 'Unknown'
+            }]);
+        }
     };
 
     const triggerNudge = (message: string) => {
@@ -139,13 +233,11 @@ export const JourneyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setNudgeMessage(null);
     };
 
-    const playTrack = (track: any) => {
+    const playTrack = (track: Track) => {
         setState(prev => ({
             ...prev,
             globalTrack: track,
             isGlobalPlaying: true,
-            // If we play a single track, we should likely exit the journey if we are in one
-            // but for now let's just allow both and let the UI handle the priority
         }));
     };
 
@@ -153,30 +245,56 @@ export const JourneyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setState(prev => ({ ...prev, isGlobalPlaying: playing }));
     };
 
+    const [interactionCount, setInteractionCount] = useState<number>(() => {
+        const saved = sessionStorage.getItem('spotify-interaction-count');
+        return saved ? parseInt(saved, 10) : 0;
+    });
+
+    useEffect(() => {
+        sessionStorage.setItem('spotify-interaction-count', interactionCount.toString());
+    }, [interactionCount]);
+
+    const trackEvent = async (eventType: string, elementId: string, metadata: any = {}) => {
+        setInteractionCount(prev => prev + 1);
+        if (state.profileId) {
+            try {
+                await supabase.from('activity_logs').insert({
+                    profile_id: state.profileId,
+                    event_type: eventType,
+                    element_id: elementId,
+                    page_path: window.location.pathname,
+                    metadata
+                });
+            } catch (err) {
+                console.warn('Tracking failed:', err);
+            }
+        }
+    };
+
     return (
         <JourneyContext.Provider value={{
-            state,
+            state: fullState,
+            interactionCount,
             selectCategory,
             startJourney,
             resetJourney,
             nextStep,
             completeDay,
+            trackEvent,
             nudgeMessage,
             triggerNudge,
             clearNudge,
             setActiveFilter,
             goBack,
+            continueLearning,
             addToRecentlyPlayed,
             playTrack,
-            setGlobalPlaying
-        }}>
+            setGlobalPlaying,
+            setUserName,
+            updateOnboardingStep,
+            resetState
+        } as JourneyContextType}>
             {children}
         </JourneyContext.Provider>
     );
-};
-
-export const useJourney = () => {
-    const context = useContext(JourneyContext);
-    if (!context) throw new Error('useJourney must be used within JourneyProvider');
-    return context;
 };

@@ -207,10 +207,10 @@ Check if projects/[feature-name]/capture/ already has files.
 Empty → proceed immediately.
 Has files → ask:
   "Capture data exists from a previous run.
-    Has the target site changed?
-    A) Re-capture all
-    B) Re-capture specific page — which?
-    C) Keep existing — skip to gate"
+   Has the target site changed?
+   A) Re-capture all
+   B) Re-capture specific page — which?
+   C) Keep existing — skip to gate"
 Wait for answer.
 ```
 
@@ -768,4 +768,4 @@ Gate may not be written with silent gaps.
 
 *Last updated: 2026-03-06*
 *Version 5.0 — Built from 346-source research synthesis.*
-*3 AI systems: Claude (122 sources), Perplexity (120+), Gemini (104). (104).*
+*3 AI systems: Claude (122 sources), Perplexity (120+), Gemini (104).*

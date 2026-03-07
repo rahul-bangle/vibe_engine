@@ -1,6 +1,6 @@
 import React from 'react';
 import { Share2, CheckCircle2, MoreHorizontal, Mic2, ListMusic, MonitorSpeaker, Volume2, Maximize2 } from 'lucide-react';
-import { useJourney } from '../context/JourneyContext';
+import { useJourney } from '../hooks/useJourney';
 import { motion } from 'framer-motion';
 
 export const NowPlayingSidebar: React.FC = () => {
@@ -8,14 +8,14 @@ export const NowPlayingSidebar: React.FC = () => {
 
     // Use the playing track, or fallback to a default premium-looking placeholder
     const track = state.globalTrack || {
-        name: "Desh Mere (From \"Bhuj The Pride Of India\")",
-        artist: "Arijit Singh",
-        description: "Trending Track",
-        image: "https://i.scdn.co/image/ab67616d0000b273523f49caaba29ec7a7fa9524", // Arijit Singh playlist/album cover
+        name: "Welcome to Spotify Learning",
+        artist: "Language Mastery Journey",
+        description: "Start your journey",
+        image: "/language_mastery_hero.png", 
         credits: [
-            { name: "Arijit Singh", role: "Main Artist • Composer" }
+            { name: "Global Academy", role: "Learning Content Creator" }
         ]
-    };
+    } as any;
 
     return (
         <aside className="w-full h-full bg-[#121212] flex flex-col overflow-y-auto no-scrollbar font-sans rounded-xl border border-white/5">
@@ -90,7 +90,7 @@ export const NowPlayingSidebar: React.FC = () => {
             </div>
 
             {/* Bottom Utilities */}
-            <div className="p-6 bg-[#181818] flex items-center justify-between text-text-subdued rounded-b-xl mt-auto border-t border-white/5 pb-24">
+            <div className="p-6 bg-[#181818] flex items-center justify-between text-text-subdued rounded-b-xl mt-auto border-t border-white/5">
                 <div className="flex items-center gap-4">
                     <Mic2 size={18} className="hover:text-white cursor-pointer transition-colors" />
                     <ListMusic size={18} className="hover:text-white cursor-pointer transition-colors" />

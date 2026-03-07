@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Star, ArrowLeft, Share2, CheckCircle2 } from 'lucide-react';
-import { useJourney } from '../context/JourneyContext';
+import { useJourney } from '../hooks/useJourney';
 import { useSpotify } from '../hooks/useSpotify';
 
 export const CategoryDetail: React.FC = () => {
@@ -51,28 +51,28 @@ export const CategoryDetail: React.FC = () => {
         <main className="flex-1 bg-background-base rounded-lg mt-2 mr-2 mb-2 overflow-y-auto shadow-inner relative custom-scrollbar">
             <div className="absolute inset-0 bg-gradient-to-b from-primary/20 to-transparent pointer-events-none" />
 
-            <div className="p-8">
+            <div className="p-4 md:p-8">
                 <button
                     onClick={resetJourney}
-                    className="flex items-center gap-2 text-text-subdued hover:text-white mb-8 transition-colors group"
+                    className="flex items-center gap-2 text-text-subdued hover:text-white mb-4 md:mb-8 transition-colors group"
                 >
                     <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     <span className="font-bold uppercase tracking-widest text-xs">Back to Dashboard</span>
                 </button>
 
-                <div className="flex flex-col md:flex-row gap-12 items-end mb-12">
+                <div className="flex flex-col md:flex-row gap-6 md:gap-12 items-end mb-6 md:mb-12">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="w-64 h-64 shrink-0 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10"
+                        className="w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-64 shrink-0 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10"
                     >
                         <img src={category.icons?.[0]?.url} alt={category.name} className="w-full h-full object-cover" />
                     </motion.div>
 
                     <div className="flex-1">
                         <span className="text-sm font-black uppercase tracking-[0.3em] text-primary mb-2 block">Learning Journey</span>
-                        <h1 className="text-6xl font-black tracking-tighter mb-6 leading-none">{category.name}</h1>
-                        <p className="text-text-subdued text-xl max-w-2xl mb-8 font-medium leading-relaxed">
+                        <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter mb-6 leading-none">{category.name}</h1>
+                        <p className="text-text-subdued text-base md:text-xl max-w-2xl mb-8 font-medium leading-relaxed">
                             {state.currentPath === 'English Vocabulary Builder'
                                 ? "Accelerate your professional growth with a structured path to mastering high-impact English vocabulary used in Indian corporate environments."
                                 : state.currentPath === 'Communication Skills'
@@ -80,25 +80,39 @@ export const CategoryDetail: React.FC = () => {
                                     : "Supercharge your productivity with scientifically-backed habits used by the world's most effective learners and professionals."}
                         </p>
 
-                        <div className="flex items-center gap-6">
-                            <button
-                                onClick={startJourney}
-                                className="bg-primary hover:bg-primary-hover text-black px-10 py-4 rounded-full font-black text-lg hover:scale-105 transition-all shadow-[0_10px_30px_rgba(29,185,84,0.3)] flex items-center gap-3"
-                            >
-                                <Play className="fill-current w-6 h-6" />
-                                START TODAY'S SESSION
-                            </button>
-                            <button className="p-4 rounded-full border border-white/10 hover:bg-white/5 hover:scale-105 transition-all">
-                                <Share2 className="w-6 h-6 text-text-subdued" />
-                            </button>
+                        <div className="flex items-center gap-6 relative">
+                             <button
+                                 onClick={startJourney}
+                                 className={`bg-primary hover:bg-primary-hover text-black px-6 py-3 md:px-10 md:py-4 rounded-full font-black text-base md:text-lg transition-all shadow-[0_10px_30px_rgba(29,185,84,0.3)] flex items-center gap-3 ${state.onboardingStep === 'pointing_start' ? 'ring-4 ring-white animate-pulse scale-105' : 'hover:scale-105'}`}
+                             >
+                                 <Play className="fill-current w-6 h-6" />
+                                 {state.onboardingStep === 'pointing_start' ? 'CLICK TO START JOURNEY' : "START TODAY'S SESSION"}
+                             </button>
+
+                            {state.onboardingStep === 'pointing_start' && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="absolute bottom-full left-0 mb-6 flex flex-col items-start gap-3 pointer-events-none z-[50]"
+                                >
+                                    <div className="bg-primary text-black text-xs font-black px-6 py-3 rounded-full shadow-[0_0_30px_rgba(29,185,84,0.6)] whitespace-nowrap uppercase tracking-widest border-2 border-white/20">
+                                        👇 Start your first day here
+                                    </div>
+                                    <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[10px] border-transparent border-t-primary ml-10" />
+                                </motion.div>
+                            )}
+
+                             <button className="p-4 rounded-full border border-white/10 hover:bg-white/5 hover:scale-105 transition-all">
+                                 <Share2 className="w-6 h-6 text-text-subdued" />
+                             </button>
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
                     <div className="lg:col-span-2 space-y-8">
-                        <section className="bg-background-elevated p-8 rounded-3xl border border-white/5 shadow-xl">
-                            <h2 className="text-2xl font-black mb-6 flex items-center gap-3">
+                        <section className="bg-background-elevated p-4 md:p-8 rounded-3xl border border-white/5 shadow-xl">
+                            <h2 className="text-xl md:text-2xl font-black mb-6 flex items-center gap-3">
                                 <CheckCircle2 className="text-primary w-6 h-6" />
                                 Learning Outcomes
                             </h2>
@@ -114,8 +128,8 @@ export const CategoryDetail: React.FC = () => {
                             </div>
                         </section>
 
-                        <section className="bg-background-elevated p-8 rounded-3xl border border-white/5 shadow-xl">
-                            <h2 className="text-2xl font-black mb-6">Course Material</h2>
+                        <section className="bg-background-elevated p-4 md:p-8 rounded-3xl border border-white/5 shadow-xl">
+                            <h2 className="text-xl md:text-2xl font-black mb-6">Course Material</h2>
                             <div className="space-y-4">
                                 {sequence.map((item, i) => (
                                     <div key={i} className="flex items-center justify-between p-4 hover:bg-white/5 rounded-xl transition-colors group border-b border-white/5 last:border-0">
@@ -134,7 +148,7 @@ export const CategoryDetail: React.FC = () => {
                     </div>
 
                     <div className="space-y-8">
-                        <div className="bg-primary/10 border border-primary/20 p-8 rounded-3xl relative overflow-hidden group">
+                        <div className="bg-primary/10 border border-primary/20 p-4 md:p-8 rounded-3xl relative overflow-hidden group">
                             <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors pointer-events-none" />
                             <div className="relative z-10">
                                 <h3 className="text-primary font-black uppercase tracking-widest text-[10px] mb-4">Journey Stats</h3>
@@ -161,7 +175,7 @@ export const CategoryDetail: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="bg-background-elevated p-8 rounded-3xl border border-white/5 shadow-xl">
+                        <div className="bg-background-elevated p-4 md:p-8 rounded-3xl border border-white/5 shadow-xl">
                             <h3 className="font-black uppercase tracking-widest text-[10px] mb-4 text-text-subdued">Recommended Tools</h3>
                             <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
                                 <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center text-lg">🎧</div>

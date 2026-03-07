@@ -1,65 +1,84 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, X, Maximize2 } from 'lucide-react';
-import { useJourney } from '../context/JourneyContext';
-import { motion } from 'framer-motion';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, X, ChevronDown, Shuffle, Repeat, Star } from 'lucide-react';
+import { useJourney } from '../hooks/useJourney';
+import { motion, AnimatePresence } from 'framer-motion';
 import { spotifyService } from '../services/spotifyService';
 import type { Track } from '../services/spotifyService';
+import { useParams } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 
 export const JourneyPlayer: React.FC = () => {
-    const { state, resetJourney, completeDay, addToRecentlyPlayed, setGlobalPlaying } = useJourney();
+    const PLAY_LIMIT = 8;
+    const { id } = useParams<{ id: string }>();
+    const { state, resetJourney, completeDay, addToRecentlyPlayed, setGlobalPlaying, updateOnboardingStep, continueLearning } = useJourney();
+    const journeyTitle = id ? decodeURIComponent(id) : state.currentPath || 'Focus';
+
     const [isPlaying, setIsPlaying] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
     const [volume, setVolume] = useState(0.7);
+    const [isMuted, setIsMuted] = useState(false);
     const [segmentIndex, setSegmentIndex] = useState(0);
     const [segments, setSegments] = useState<Track[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [showControls, setShowControls] = useState(true);
+    const [isCompleted, setIsCompleted] = useState(false);
+    const [dominantColor, setDominantColor] = useState('#1a1a2e');
+
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const controlsTimeoutRef = useRef<any>(null);
 
-    // Pause global playback when journey starts
+    // Stop global playback
     useEffect(() => {
-        if (state.isGlobalPlaying) {
-            setGlobalPlaying(false);
-        }
-    }, [state.isGlobalPlaying, setGlobalPlaying]);
+        if (state.isGlobalPlaying) setGlobalPlaying(false);
+    }, []);
 
-    // Fetch segments based on path
+    // Fetch segments
     useEffect(() => {
         const fetchSegments = async () => {
             setIsLoading(true);
-            const query = state.currentPath || 'Focus';
-            const tracks = await spotifyService.searchTracks(query);
+            const queryMap: Record<string, string> = {
+                'English Vocabulary Builder': 'English Vocabulary Lesson',
+                'Communication Skills': 'Communication Skills Tutorial',
+                'Language Mastery': 'English Learning Lesson',
+                'Productivity Habits': 'Productivity Skills Podcast',
+                'Morning Motivation': 'Daily Motivation Podcast',
+                'Public Speaking': 'Public Speaking Tutorial'
+            };
+            const query = queryMap[journeyTitle] || `${journeyTitle} lesson`;
+            const educationalTracks = await spotifyService.searchTracks(query);
 
-            const sequence: Track[] = [
-                { ...tracks[0], name: `Welcome to ${state.currentPath}`, artist: "Journey Intro" },
-                { ...tracks[1] },
-                { ...tracks[2] || tracks[0], name: "Deep Dive", artist: "Educational Content" },
-                { ...tracks[3] || tracks[1], name: "Completion", artist: "Day Wrap-up" }
-            ];
-
-            setSegments(sequence);
+            if (educationalTracks.length === 0) {
+                setSegments([{
+                    id: 'fallback',
+                    name: `Welcome to ${journeyTitle}`,
+                    artist: 'Discovery Academy',
+                    albumArt: '/language_mastery_hero.png',
+                    previewUrl: '',
+                    duration: 30
+                }]);
+            } else {
+                const sequence = educationalTracks.slice(0, 4).map((t, i) => ({
+                    ...t,
+                    name: `Module ${i + 1}: ${t.name}`,
+                    artist: i === 0 ? 'Introduction' : t.artist
+                }));
+                setSegments(sequence);
+            }
             setIsLoading(false);
         };
         fetchSegments();
-    }, [state.currentPath]);
+    }, [journeyTitle]);
 
     const currentSegment = segments[segmentIndex];
 
-    // Audio handlers
     useEffect(() => {
-        if (currentSegment && currentSegment.id) {
-            addToRecentlyPlayed(currentSegment.id);
-        }
+        if (currentSegment?.id) addToRecentlyPlayed(currentSegment.id);
     }, [segmentIndex, currentSegment?.id]);
 
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
-
         if (isPlaying) {
-            audio.play().catch(e => console.error("Playback failed", e));
+            audio.play().catch(() => {});
         } else {
             audio.pause();
         }
@@ -67,23 +86,67 @@ export const JourneyPlayer: React.FC = () => {
 
     useEffect(() => {
         if (audioRef.current) {
-            audioRef.current.volume = volume;
+            audioRef.current.volume = isMuted ? 0 : volume;
         }
-    }, [volume]);
+    }, [volume, isMuted]);
+
+    // Shift background color per segment
+    useEffect(() => {
+        const colors = ['#0d1b2a', '#1a0a2e', '#0a2a1a', '#2a1a0a'];
+        setDominantColor(colors[segmentIndex % colors.length]);
+    }, [segmentIndex]);
+
+    // Sync global completion state to local and advance if continuing
+    useEffect(() => {
+        if (isCompleted && !state.isCompleted) {
+            // User clicked "Continue Learning"
+            setIsCompleted(false);
+            if (segmentIndex < segments.length - 1) {
+                setSegmentIndex(prev => prev + 1);
+                setIsPlaying(true);
+                setCurrentTime(0);
+                if (audioRef.current) audioRef.current.currentTime = 0;
+            } else {
+                // If at end of sequence, just reset to first but keep playing
+                setSegmentIndex(0);
+                setIsPlaying(true);
+                setCurrentTime(0);
+                if (audioRef.current) audioRef.current.currentTime = 0;
+            }
+        }
+    }, [state.isCompleted, isCompleted, segmentIndex, segments.length]);
+
+    // Auto-dismiss onboarding HUD
 
     const handleTimeUpdate = () => {
         if (audioRef.current) {
-            setCurrentTime(audioRef.current.currentTime);
-            setDuration(audioRef.current.duration || 0);
+            const current = audioRef.current.currentTime;
+            setCurrentTime(current);
+            if (current >= PLAY_LIMIT) {
+                audioRef.current.currentTime = 0;
+                handleEnded();
+            }
         }
     };
 
+    const triggerCompletion = () => {
+        setIsPlaying(false);
+        completeDay();
+        setIsCompleted(true);
+        if (state.onboardingStep !== 'completed' && state.onboardingStep !== null) {
+            updateOnboardingStep('completed');
+        }
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 9999 });
+    };
+
     const handleEnded = () => {
-        if (segmentIndex < segments.length - 1) {
+        // Streamlined: Complete after the first segment is done
+        if (segmentIndex === 0) {
+            triggerCompletion();
+        } else if (segmentIndex < segments.length - 1) {
             setSegmentIndex(prev => prev + 1);
         } else {
-            setIsPlaying(false);
-            completeDay();
+            triggerCompletion();
         }
     };
 
@@ -92,219 +155,294 @@ export const JourneyPlayer: React.FC = () => {
         if (!audio) return;
         const rect = e.currentTarget.getBoundingClientRect();
         const percent = (e.clientX - rect.left) / rect.width;
-        audio.currentTime = percent * audio.duration;
+        audio.currentTime = percent * PLAY_LIMIT;
     };
 
     const handleNext = () => {
-        if (segmentIndex < segments.length - 1) {
-            setSegmentIndex(prev => prev + 1);
+        if (segmentIndex === 0) {
+            triggerCompletion();
+        } else if (segmentIndex < segments.length - 1) {
+            setSegmentIndex(p => p + 1);
         }
     };
 
-    const handlePrev = () => {
-        if (segmentIndex > 0) {
-            setSegmentIndex(prev => prev - 1);
-        }
-    };
+    const handlePrev = () => { if (segmentIndex > 0) setSegmentIndex(p => p - 1); };
 
-    // Auto-hide controls
-    const handleMouseMove = () => {
-        setShowControls(true);
-        if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-        controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
-    };
+    const progress = (currentTime / PLAY_LIMIT) * 100;
 
+    // ── Loading ──────────────────────────────────────────────
     if (isLoading || !currentSegment) {
         return (
-            <div className="flex h-[80vh] items-center justify-center">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="fixed inset-0 bg-[#121212] flex items-center justify-center z-50">
+                <div className="flex flex-col items-center gap-6">
+                    <div className="w-10 h-10 border-2 border-[#1db954] border-t-transparent rounded-full animate-spin" />
+                    <p className="text-white/40 text-sm font-medium tracking-widest uppercase">Loading journey</p>
+                </div>
             </div>
         );
     }
 
-    const progress = (currentTime / (duration || 1)) * 100;
-    const overallProgress = ((segmentIndex + (currentTime / (duration || 1))) / segments.length) * 100;
+    // ── Completion ───────────────────────────────────────────
+    if (isCompleted) {
+        return (
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="fixed inset-0 z-[300] bg-[#121212] flex flex-col items-center justify-center p-6 text-center"
+            >
+                {/* Subtle green glow bg */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(29,185,84,0.15)_0%,_transparent_70%)]" />
 
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                    className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full"
+                >
+                    {/* Big green checkmark circle */}
+                    <div className="w-24 h-24 rounded-full bg-[#1db954] flex items-center justify-center shadow-[0_0_60px_rgba(29,185,84,0.4)]">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                            <motion.path
+                                d="M5 13l4 4L19 7"
+                                stroke="black"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: 1 }}
+                                transition={{ delay: 0.4, duration: 0.5 }}
+                            />
+                        </svg>
+                    </div>
+
+                    <div>
+                        <p className="text-[#1db954] text-xs font-bold tracking-[0.3em] uppercase mb-3 text-center w-full">Learning Milestone</p>
+                        <h1 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
+                            YOU ARE NOW READY.
+                        </h1>
+                        <p className="text-white/50 text-base leading-relaxed">
+                            Session 1 completed.<br />
+                            Streak updated to <span className="text-[#1db954] font-bold">{(state.streak || 0) + 1} days</span>.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 w-full max-w-xs">
+                        <button
+                            onClick={continueLearning}
+                            className="bg-[#1db954] hover:bg-[#1ed760] text-black font-black text-xs py-4 px-10 rounded-full hover:scale-105 active:scale-95 transition-all tracking-widest uppercase"
+                        >
+                            Continue Learning
+                        </button>
+                        <button
+                            onClick={resetJourney}
+                            className="bg-white/10 hover:bg-white/20 text-white font-black text-xs py-4 px-10 rounded-full hover:scale-105 active:scale-95 transition-all tracking-widest uppercase border border-white/10"
+                        >
+                            Back to Home
+                        </button>
+                    </div>
+                </motion.div>
+            </motion.div>
+        );
+    }
+
+    // ── Main Player ──────────────────────────────────────────
     return (
         <div
-            className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center overflow-hidden cursor-none"
-            onMouseMove={handleMouseMove}
-            style={{ cursor: showControls ? 'default' : 'none' }}
+            className="fixed inset-0 z-50 flex flex-col h-screen overflow-hidden"
+            style={{
+                background: `linear-gradient(180deg, ${dominantColor} 0%, #121212 50%, #121212 100%)`
+            }}
         >
-            {/* Ambient Canvas (Background Video) */}
-            <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none grayscale contrast-125"
-                src="https://player.vimeo.com/external/494252666.sd.mp4?s=bc46313832c39d8999818817711b7dfb6a5a3a0c&profile_id=164"
+            {/* Subtle noise texture overlay */}
+            <div
+                className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
+                }}
             />
-
-            {/* Gradient Flow Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10 animate-gradient-flow pointer-events-none" />
 
             <audio
                 ref={audioRef}
                 src={currentSegment.previewUrl}
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={handleEnded}
-                onError={() => handleNext()} // Skip if error
+                onError={handleNext}
             />
 
-            {/* Top HUD: Segment Indicator */}
-            <motion.div
-                initial={{ y: -50, opacity: 0 }}
-                animate={{ y: showControls ? 0 : -50, opacity: showControls ? 1 : 0 }}
-                className="absolute top-10 left-0 right-0 flex justify-center gap-4 z-20"
-            >
-                {segments.map((_, i) => (
-                    <div
-                        key={i}
-                        className={`h-1 rounded-full transition-all duration-500 ${i === segmentIndex ? 'w-12 bg-primary mastery-glow' :
-                            i < segmentIndex ? 'w-6 bg-primary/40' : 'w-6 bg-white/10'
-                            }`}
-                    />
-                ))}
-            </motion.div>
+            {/* ── Top Bar ── */}
+            <div className="relative z-10 flex items-center justify-between px-6 pt-6 pb-2">
+                <button
+                    onClick={resetJourney}
+                    className="p-2 text-white/50 hover:text-white transition-colors"
+                >
+                    <ChevronDown className="w-6 h-6" />
+                </button>
 
-            {/* Exit Button */}
-            <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: showControls ? 1 : 0 }}
-                onClick={resetJourney}
-                className="absolute top-10 right-10 p-3 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors z-20"
-            >
-                <X className="w-6 h-6" />
-            </motion.button>
-
-            {/* Main Center Stage */}
-            <div className="relative flex flex-col items-center gap-12 z-10 scale-90 md:scale-100">
-                {/* Rotating Media Center */}
-                <div className="relative group p-4">
-                    {/* SVG Progress Ring */}
-                    <svg className="absolute inset-0 w-full h-full -rotate-90">
-                        <circle
-                            cx="50%" cy="50%" r="48%"
-                            fill="none"
-                            stroke="rgba(255,255,255,0.05)"
-                            strokeWidth="2"
-                        />
-                        <motion.circle
-                            cx="50%" cy="50%" r="48%"
-                            fill="none"
-                            stroke="var(--primary)"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            style={{
-                                strokeDasharray: "100",
-                                strokeDashoffset: 100 - progress
-                            }}
-                            className="mastery-glow"
-                        />
-                    </svg>
-
-                    {/* Circular Album Art */}
-                    <div className="w-80 h-80 rounded-full overflow-hidden border-4 border-white/5 shadow-2xl animate-spin-slow">
-                        <img
-                            src={currentSegment.albumArt}
-                            alt={currentSegment.name}
-                            className="w-full h-full object-cover"
-                        />
-                    </div>
+                <div className="text-center">
+                    <p className="text-white/40 text-[10px] font-bold tracking-[0.25em] uppercase">Playing Journey</p>
+                    <p className="text-white text-sm font-bold mt-0.5 tracking-tight">{journeyTitle}</p>
                 </div>
 
-                {/* Track Info */}
-                <div className="text-center space-y-4">
-                    <motion.h1
+                <div className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10">
+                    <span className="text-[#1db954] text-xs">🔥</span>
+                    <span className="text-white/70 text-[10px] font-bold ml-1">{state.streak || 0}</span>
+                </div>
+            </div>
+
+            {/* ── Main View ── */}
+            <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-8 py-4">
+                <motion.div
+                    key={segmentIndex}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                    className="w-full max-w-[min(calc(100vh-400px),calc(100vw-64px))] aspect-square rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.8)] border border-white/10"
+                >
+                    <img
+                        src={currentSegment.albumArt}
+                        alt={currentSegment.name}
+                        className="w-full h-full object-cover"
+                    />
+                </motion.div>
+
+                <div className="w-full max-w-xl text-center mt-8">
+                     <motion.h2
                         key={currentSegment.name}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        className="text-5xl md:text-7xl font-black tracking-tighter text-glow"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-white text-2xl md:text-3xl font-black tracking-tight"
                     >
                         {currentSegment.name}
-                    </motion.h1>
+                    </motion.h2>
                     <motion.p
                         key={currentSegment.artist}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.1 }}
-                        className="text-xl md:text-2xl font-bold text-primary/80 uppercase tracking-widest"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.05 }}
+                        className="text-white/50 text-base font-medium mt-2"
                     >
-                        {currentSegment.artist}
+                        {currentSegment.artist} • Module {segmentIndex + 1}/4
                     </motion.p>
                 </div>
             </div>
 
-            {/* Floating Controls Bar */}
-            <motion.div
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: showControls ? 0 : 100, opacity: showControls ? 1 : 0 }}
-                className="absolute bottom-12 glass-card p-6 md:p-8 rounded-[40px] w-[90%] max-w-2xl flex flex-col gap-6 z-20"
-            >
-                {/* Scrubber */}
-                <div className="flex items-center gap-4">
-                    <span className="text-xs font-mono text-white/40 w-10 tabular-nums">
-                        {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')}
-                    </span>
-                    <div
-                        onClick={handleSeek}
-                        className="flex-1 h-1.5 bg-white/10 rounded-full cursor-pointer relative group overflow-hidden"
-                    >
-                        <motion.div
-                            className="absolute inset-y-0 left-0 bg-primary group-hover:bg-primary-hover transition-colors"
-                            initial={false}
-                            animate={{ width: `${progress}%` }}
-                        />
-                    </div>
-                    <span className="text-xs font-mono text-white/40 w-10 tabular-nums">
-                        {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}
-                    </span>
-                </div>
-
-                {/* Integration: Controls + Volume */}
-                <div className="flex items-center justify-between px-4">
-                    <div className="flex items-center gap-4 w-48 invisible md:visible">
-                        <Volume2 className="w-5 h-5 text-white/60" />
-                        <input
-                            type="range"
-                            min="0" max="1" step="0.01"
-                            value={volume}
-                            onChange={(e) => setVolume(parseFloat(e.target.value))}
-                            className="w-full accent-primary bg-white/10 rounded-lg appearance-none h-1"
-                        />
-                    </div>
-
+            {/* ── REDESIGNED COMPACT PLAYER BAR ── */}
+            <div className="relative z-20 bg-black/40 backdrop-blur-md border-t border-white/5 px-6 py-4 md:py-6 flex flex-col items-center gap-4">
+                
+                {/* Center: Progress & Main Controls */}
+                <div className="w-full max-w-2xl flex flex-col items-center gap-2">
+                    
+                    {/* Controls Row */}
                     <div className="flex items-center gap-8">
-                        <button onClick={handlePrev} className="text-white/40 hover:text-white transition-colors">
-                            <SkipBack className="w-7 h-7 fill-current" />
+                        <button className="text-white/30 hover:text-white transition-colors">
+                            <Shuffle className="w-4 h-4" />
                         </button>
+
                         <button
-                            onClick={() => setIsPlaying(!isPlaying)}
-                            className="w-16 h-16 bg-white rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_10px_30_rgba(255,255,255,0.2)]"
+                            onClick={handlePrev}
+                            className="text-white/70 hover:text-white transition-colors disabled:opacity-20 translate-y-0.5"
+                            disabled={segmentIndex === 0}
                         >
-                            {isPlaying ? <Pause className="text-black w-7 h-7 fill-current" /> : <Play className="text-black w-7 h-7 fill-current translate-x-0.5" />}
+                            <SkipBack className="w-6 h-6 fill-current" />
                         </button>
-                        <button onClick={handleNext} className="text-white/40 hover:text-white transition-colors">
-                            <SkipForward className="w-7 h-7 fill-current" />
+
+                        <button
+                            onClick={() => {
+                                if (!hasStarted) setHasStarted(true);
+                                setIsPlaying(!isPlaying);
+                            }}
+                            className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"
+                        >
+                            {isPlaying
+                                ? <Pause className="text-black w-5 h-5 fill-current" />
+                                : <Play className="text-black w-5 h-5 fill-current translate-x-0.5" />
+                            }
+                        </button>
+
+                        <button
+                            onClick={handleNext}
+                            className="text-white/70 hover:text-white transition-colors disabled:opacity-20 translate-y-0.5"
+                        >
+                            <SkipForward className="w-6 h-6 fill-current" />
+                        </button>
+
+                        <button className="text-white/30 hover:text-white transition-colors">
+                            <Repeat className="w-4 h-4" />
                         </button>
                     </div>
 
-                    <div className="w-48 flex justify-end">
-                        <button className="text-white/40 hover:text-white transition-colors">
-                            <Maximize2 className="w-5 h-5" />
-                        </button>
+                    {/* Scrubber Row */}
+                    <div className="w-full flex items-center gap-3 group">
+                        <span className="text-[10px] text-white/30 font-mono w-10 text-right tabular-nums">
+                            {Math.floor(currentTime / 60)}:{Math.floor(currentTime % 60).toString().padStart(2, '0')}
+                        </span>
+                        
+                        <div
+                            onClick={handleSeek}
+                            className="flex-1 h-1 bg-white/10 rounded-full cursor-pointer relative"
+                        >
+                            <motion.div
+                                className="absolute inset-y-0 left-0 bg-white group-hover:bg-[#1db954] rounded-full transition-colors"
+                                style={{ width: `${progress}%` }}
+                            />
+                            <motion.div
+                                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                style={{ left: `calc(${progress}% - 6px)` }}
+                            />
+                        </div>
+
+                        <span className="text-[10px] text-white/30 font-mono w-10 tabular-nums">
+                            -{Math.floor((PLAY_LIMIT - currentTime) / 60)}:{Math.floor((PLAY_LIMIT - currentTime) % 60).toString().padStart(2, '0')}
+                        </span>
                     </div>
                 </div>
-            </motion.div>
 
-            {/* Overall Progress Hint */}
-            <div className="absolute bottom-4 left-0 right-0 h-0.5 bg-white/5">
-                <motion.div
-                    className="h-full bg-primary/20"
-                    animate={{ width: `${overallProgress}%` }}
-                />
+                {/* Volume & Extras (Desktop only or floating) */}
+                <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-4 w-32">
+                     <button onClick={() => setIsMuted(!isMuted)} className="text-white/40 hover:text-white transition-colors">
+                        {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    </button>
+                    <div className="flex-1 h-1 bg-white/10 rounded-full relative group cursor-pointer"
+                        onClick={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setVolume((e.clientX - rect.left) / rect.width);
+                            setIsMuted(false);
+                        }}
+                    >
+                        <div
+                            className="absolute inset-y-0 left-0 bg-white/40 group-hover:bg-[#1db954] rounded-full transition-colors"
+                            style={{ width: `${isMuted ? 0 : volume * 100}%` }}
+                        />
+                    </div>
+                </div>
             </div>
+
+
+            {/* ── Guidance HUD (Onboarding) ── */}
+            <AnimatePresence>
+                {state.onboardingStep === 'playing' && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[200] max-w-xs w-full px-4"
+                    >
+                        <div className="bg-primary/95 backdrop-blur-2xl p-6 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/20 text-black text-center relative">
+                            <button 
+                                onClick={() => updateOnboardingStep(null)}
+                                className="absolute top-4 right-4 p-1 hover:bg-black/10 rounded-full transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                             <Star className="w-8 h-8 mx-auto mb-3 fill-black" />
+                            <h3 className="font-black text-lg leading-tight mb-2 uppercase tracking-tighter">Spotify Learning Active</h3>
+                            <p className="text-sm font-bold opacity-80 leading-snug">
+                                Every track builds your skills. Complete this 8s session to finish your first day!
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

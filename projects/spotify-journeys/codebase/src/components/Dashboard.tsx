@@ -1,16 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, Clock, ListMusic, X, Play } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { useSpotify } from '../hooks/useSpotify';
-import { useJourney } from '../context/JourneyContext';
+import { useJourney } from '../hooks/useJourney';
 import { spotifyService } from '../services/spotifyService';
-import type { JourneyPath } from '../context/JourneyContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useTracking } from '../hooks/useTracking';
+import { FeedbackCard } from './FeedbackCard';
+import { ReviewModal } from './ReviewModal';
 import { SkeletonLoader } from './SkeletonLoader';
 import { NowPlayingSidebar } from './NowPlayingSidebar';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SpotifyIcon } from './icons/SpotifyIcon';
+import { OnboardingPopUp } from './OnboardingPopUp';
 
 export const Dashboard: React.FC = () => {
     const { featuredPlaykits, categories } = useSpotify();
-    const { state, selectCategory, setActiveFilter, playTrack } = useJourney();
+    const { state, selectCategory, setActiveFilter, playTrack, updateOnboardingStep, resetState } = useJourney();
+    const { trackEvent } = useTracking();
     const [podcastSections, setPodcastSections] = useState<{ title: string; items: any[] }[]>([]);
     const [musicSections, setMusicSections] = useState<{ title: string; items: any[] }[]>([]);
     const [allSections, setAllSections] = useState<{ title: string; items: any[] }[]>([]);
@@ -18,6 +23,7 @@ export const Dashboard: React.FC = () => {
     const [artistsList, setArtistsList] = useState<{ title: string; items: any[] }[]>([]);
     const [recentTracks, setRecentTracks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isReviewOpen, setIsReviewOpen] = useState(false);
 
     const scrollRefs = React.useRef<{ [key: string]: HTMLDivElement | null }>({});
     const activeFilter = state.activeFilter;
@@ -25,7 +31,6 @@ export const Dashboard: React.FC = () => {
     useEffect(() => {
         const fetchSections = async () => {
             setIsLoading(true);
-            // Artificial delay for premium skeleton feel
             const delay = new Promise(resolve => setTimeout(resolve, 800));
 
             try {
@@ -162,13 +167,17 @@ export const Dashboard: React.FC = () => {
                     items.map((item) => (
                         <div
                             key={item.id}
-                            className="bg-[#181818] p-4 rounded-xl hover:bg-[#282828] transition-all duration-300 cursor-pointer group flex flex-col items-start gap-3 min-w-[200px] max-w-[200px] border border-transparent hover:border-white/5 snap-start"
+                            className="bg-[#181818] p-4 rounded-xl hover:bg-[#282828] transition-all duration-300 cursor-pointer group flex flex-col items-start gap-3 min-w-[160px] max-w-[160px] sm:min-w-[200px] sm:max-w-[200px] border border-transparent hover:border-white/5 snap-start"
                         >
                             <div className="w-full aspect-square relative shadow-lg rounded-lg overflow-hidden">
                                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                                 <div className="absolute bottom-2 right-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10">
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); playTrack(item); }}
+                                        onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            playTrack(item); 
+                                            trackEvent('PLAY_CONTENT', item.id);
+                                        }}
                                         className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all text-black"
                                     >
                                         <Play className="w-5 h-5 fill-current translate-x-0.5" />
@@ -187,177 +196,241 @@ export const Dashboard: React.FC = () => {
     );
 
     return (
-        <div className="flex flex-col h-full w-full overflow-hidden flex-1 bg-black rounded-lg mt-2 mr-2 mb-2">
-            {/* Top Navbar = fixed height, flex-shrink-0, never compresses */}
-            <header className="flex-shrink-0 z-10 sticky top-0 bg-[#1a1a1a] px-6 py-4 flex items-center justify-between border-b border-white/5 rounded-t-lg">
+        <div className="flex flex-col h-full w-full overflow-hidden flex-1 bg-black rounded-lg mt-2 mr-2 mb-2 relative">
+            <AnimatePresence>
+                {state.onboardingStep === 'dashboard' && (
+                    <OnboardingPopUp onClose={() => updateOnboardingStep('pointing_sidebar')} />
+                )}
+            </AnimatePresence>
+
+            {state.onboardingStep === 'pointing_start' && (
+                 <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`fixed z-[999] flex items-center gap-3 pointer-events-none text-white ${activeFilter === 'Journeys' ? 'bottom-[120px] left-1/2 -translate-x-1/2 flex-col' : 'left-[260px] top-[400px]'}`}
+                >
+                    {activeFilter !== 'Journeys' ? (
+                        <>
+                            <div className="w-0 h-0 border-t-8 border-b-8 border-r-8 border-transparent border-r-primary" />
+                            <div className="bg-primary text-black text-[10px] font-black px-4 py-2 rounded-full shadow-[0_0_30px_rgba(29,185,84,0.6)] whitespace-nowrap uppercase tracking-widest">
+                                👈 Open Journeys to start
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="bg-primary text-black text-[10px] font-black px-6 py-3 rounded-full shadow-[0_0_50px_rgba(29,185,84,0.6)] whitespace-nowrap uppercase tracking-widest flex items-center gap-2">
+                                🚀 Click Voyager or any path to begin!
+                            </div>
+                            <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-primary" />
+                        </>
+                    )}
+                </motion.div>
+            )}
+            <header className="flex-shrink-0 z-10 sticky top-0 bg-[#1a1a1a] px-6 py-4 flex items-center justify-between border-b border-white/5 rounded-t-lg overflow-hidden">
                 <div className="flex items-center gap-6">
-                    <div className="flex gap-2">
+                    <div className="hidden md:flex gap-2">
                         <button className="bg-black/40 p-1.5 rounded-full"><ChevronLeft className="w-5 h-5" /></button>
                         <button className="bg-black/40 p-1.5 rounded-full opacity-50"><ChevronRight className="w-5 h-5" /></button>
                     </div>
-                    <div className="relative group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 w-4 h-4" />
-                        <input
-                            type="text"
-                            placeholder="What do you want to play?"
-                            className="bg-[#242424] rounded-full py-2 pl-10 pr-4 text-xs w-64 focus:outline-none focus:ring-1 focus:ring-white transition-all"
-                        />
-                    </div>
+                    <button 
+                        onClick={resetState}
+                        className="text-[10px] font-black text-primary/40 hover:text-primary uppercase tracking-[0.2em] transition-colors border border-primary/20 hover:border-primary/40 px-3 py-1.5 rounded-full"
+                    >
+                        Refresh Experience
+                    </button>
                 </div>
 
-                <div className="flex items-center gap-6">
-                    <nav className="flex gap-6 text-xs font-bold text-text-subdued">
-                        {['All', 'Music', 'Podcasts', 'Audiobooks', 'Artists', 'Journeys'].map(f => (
+                <div className="flex items-center gap-6 overflow-hidden ml-4">
+                    <nav className="flex gap-6 text-xs font-bold text-text-subdued overflow-x-auto no-scrollbar whitespace-nowrap">
+                        {['All', 'Music', 'Podcasts', 'Audiobooks', 'Artists', 'Journeys'].map(filter => (
                             <button
-                                key={f}
-                                onClick={() => setActiveFilter(f)}
-                                className={`hover:text-white transition-colors pb-1 border-b-2 ${activeFilter === f ? 'text-white border-primary' : 'border-transparent'}`}
+                                key={filter}
+                                onClick={() => {
+                                    setActiveFilter(filter);
+                                    trackEvent('NAV_FILTER', filter);
+                                }}
+                                className={`hover:text-white transition-colors pb-1 border-b-2 ${activeFilter === filter ? 'text-white border-primary' : 'border-transparent'}`}
                             >
-                                {f}
+                                {filter}
                             </button>
                         ))}
                     </nav>
                 </div>
             </header>
 
-            {/* Main content area below navbar = flex flex-row flex-1 overflow-hidden */}
             <div className="flex flex-row flex-1 overflow-hidden pt-2">
-                {/* Center content column with min-w-0 */}
                 <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar bg-gradient-to-b from-[#1a1a1a] to-black rounded-lg relative">
                     <div className="p-6 space-y-10">
-                        {/* Hero Release Section */}
-                        {activeFilter !== 'Journeys' && (
+                        {isLoading ? (
+                            <SkeletonLoader type="hero" />
+                        ) : (
                             <>
-                                {isLoading ? (
-                                    <SkeletonLoader type="hero" />
-                                ) : (
-                                    <section className="relative w-full h-[320px] rounded-2xl overflow-hidden group shadow-2xl">
-                                        <div className={`absolute inset-0 bg-gradient-to-br ${hero.color}`} />
-                                        <div className="absolute -right-20 -top-20 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse" />
-
-                                        <div className="relative h-full flex items-center p-10 md:p-14">
-                                            <div className="flex-1 space-y-6">
-                                                <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white/40">{hero.subtitle}</span>
-                                                <h1 className="text-6xl md:text-7xl font-black text-white tracking-tighter leading-none">{hero.title}</h1>
-                                                <p className="text-sm md:text-base text-white/80 max-w-md font-medium leading-relaxed">
-                                                    {hero.description}
-                                                </p>
-                                                <div className="flex items-center gap-6">
-                                                    <button
-                                                        onClick={() => selectCategory("English Vocabulary Builder")}
-                                                        className="bg-white text-black px-8 py-3 rounded-full font-black text-sm flex items-center gap-2 hover:scale-105 transition-all shadow-2xl"
-                                                    >
-                                                        <Play size={18} fill="black" />
-                                                        <span>Start Now</span>
-                                                    </button>
-                                                    <div className="flex items-center gap-4 text-[10px] font-black text-white/60 uppercase tracking-widest">
-                                                        <span className="flex items-center gap-1.5"><ListMusic size={14} /> <span>Premium Content</span></span>
-                                                        <span className="flex items-center gap-1.5"><Clock size={14} /> <span>12h Mastered</span></span>
-                                                    </div>
-                                                </div>
+                                {Object.keys(state.completionHistory).length === 1 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="mb-8 p-6 rounded-[2rem] bg-gradient-to-r from-primary/20 via-primary/5 to-transparent border border-primary/20 flex flex-col md:flex-row items-center justify-between gap-6"
+                                    >
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(29,185,84,0.3)]">
+                                                <SpotifyIcon color="black" size={32} />
                                             </div>
-                                            <div className="relative hidden lg:block">
+                                            <div>
+                                                <h3 className="text-2xl font-black text-white tracking-tighter uppercase">Evolution Complete!</h3>
+                                                <p className="text-primary font-bold text-sm">Congratulations! You've finished your first learning journey.</p>
+                                            </div>
+                                        </div>
+                                        <p className="text-text-subdued text-sm font-medium max-w-sm text-center md:text-right">
+                                            Keep leading and listening with Spotify. Your next session is ready whenever you are.
+                                        </p>
+                                    </motion.div>
+                                )}
+                                <section className="relative w-full h-[200px] md:h-[260px] rounded-3xl overflow-hidden group shadow-2xl transition-all duration-700 hover:shadow-primary/10">
+                                {activeFilter === 'Journeys' ? (
+                                    <div className="relative h-full flex flex-col md:flex-row items-center p-5 md:p-10 lg:p-14 gap-8">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-[#0c0c0c] via-[#1a1a1a] to-[#2d1e4e]" />
+                                        <div className="relative h-full flex flex-col md:flex-row items-center gap-8 z-10">
+                                            <div className="flex-1 space-y-6">
+                                                <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9]">
+                                                    LANGUAGE <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-400">SPOTIFY BETA.</span>
+                                                </h1>
+                                                <p className="text-sm text-white/60 max-w-md font-medium">
+                                                    Master 500+ high-frequency English words and improve your professional communication skills.
+                                                </p>
+                                                <button
+                                                    onClick={() => {
+                                                        if (state.onboardingStep === 'pointing_start') {
+                                                            updateOnboardingStep('playing');
+                                                        }
+                                                        selectCategory("English Vocabulary Builder");
+                                                    }}
+                                                    className={`bg-primary text-black px-8 py-3 rounded-full font-black text-xs md:text-sm flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-xl ${state.onboardingStep === 'pointing_start' ? 'ring-4 ring-primary animate-pulse shadow-[0_0_20px_rgba(29,185,84,0.6)]' : ''}`}
+                                                >
+                                                    <Play size={20} fill="black" />
+                                                    <span>{state.onboardingStep === 'pointing_start' ? 'START FIRST JOURNEY' : 'RESUME LEARNING'}</span>
+                                                </button>
+                                            </div>
+                                            <div className="hidden xl:block">
                                                 <img
-                                                    src={hero.image}
+                                                    src="/language_mastery_hero.png"
                                                     alt="hero"
-                                                    className="w-72 h-72 object-cover rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] rotate-6 group-hover:rotate-0 transition-transform duration-700 border-4 border-white/10"
+                                                    className="w-56 h-56 lg:w-64 lg:h-64 object-cover rounded-3xl shadow-2xl border border-white/10"
                                                 />
                                             </div>
                                         </div>
-                                    </section>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className={`absolute inset-0 bg-gradient-to-br ${hero.color}`} />
+                                        <div className="relative h-full flex items-center p-5 md:p-10 lg:p-14">
+                                            <div className="flex-1 space-y-4 md:space-y-6">
+                                                <span className="text-[8px] md:text-[10px] font-black tracking-[0.3em] uppercase text-white/40">{hero.subtitle}</span>
+                                                <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tighter leading-none">{hero.title}</h1>
+                                                <p className="text-[10px] md:text-xs lg:text-sm text-white/80 max-w-sm font-medium leading-relaxed">{hero.description}</p>
+                                                <button
+                                                    onClick={() => {
+                                                        if (state.onboardingStep === 'pointing_start') {
+                                                            updateOnboardingStep('playing');
+                                                        }
+                                                        selectCategory("English Vocabulary Builder");
+                                                        trackEvent('HERO_START_JOURNEY', 'dashboard');
+                                                        if (state.onboardingStep === 'dashboard') updateOnboardingStep('pointing_sidebar');
+                                                    }}
+                                                    className={`bg-white text-black px-6 py-2 rounded-full font-black text-xs md:text-sm flex items-center gap-2 hover:scale-105 transition-all ${state.onboardingStep === 'dashboard' || state.onboardingStep === 'pointing_start' ? 'ring-4 ring-primary animate-pulse shadow-[0_0_20px_rgba(29,185,84,0.6)]' : ''}`}
+                                                >
+                                                    <Play size={18} fill="black" />
+                                                    <span>{state.onboardingStep === 'dashboard' ? 'GO TO JOURNEYS' : state.onboardingStep === 'pointing_start' ? '🚀 START YOUR FIRST JOURNEY' : 'Start Your Journey'}</span>
+                                                </button>
+                                            </div>
+                                            <div className="hidden lg:block">
+                                                <img src="/language_mastery_hero.png" alt="hero" className="w-56 h-56 lg:w-64 lg:h-64 object-cover rounded-2xl shadow-2xl border-4 border-white/10 rotate-6 group-hover:rotate-0 transition-all duration-700" />
+                                            </div>
+                                        </div>
+                                    </>
                                 )}
-                            </>
+                            </section>
+                        </>
                         )}
 
-                        {/* Good Morning / Recently Played Grid */}
-                        {activeFilter === 'All' && (
-                            <section className="space-y-6">
-                                <h2 className="text-2xl font-black tracking-tight flex items-center gap-2">
-                                    <span>☀️ Good morning, Marc</span>
-                                </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {recentTracks.length > 0 ? (
-                                        recentTracks.map((item, i) => (
-                                            <div key={i} className="flex items-center bg-white/5 hover:bg-white/10 transition-all rounded-lg overflow-hidden group cursor-pointer border border-white/5">
-                                                <div className="w-20 h-20 bg-neutral-800 flex-shrink-0 relative">
+                        <section className="space-y-6">
+                            <h2 className="text-2xl font-black tracking-tight">Good morning, {state.userName?.split(' ')[0] || 'Member'}</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                <div className="md:col-span-2 space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {recentTracks.map((item, i) => (
+                                            <div key={i} className="flex items-center bg-white/5 hover:bg-white/10 transition-all rounded-xl overflow-hidden group cursor-pointer border border-white/5 h-20">
+                                                <div className="w-20 h-20 relative flex-shrink-0">
                                                     <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
                                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <button onClick={(e) => { e.stopPropagation(); playTrack(item); }} className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-black shadow-xl">
+                                                        <button onClick={(e) => { 
+                                                            e.stopPropagation(); 
+                                                            playTrack(item); 
+                                                            trackEvent('PLAY_RECENT', item.id);
+                                                        }} className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-black shadow-lg">
                                                             <Play className="w-5 h-5 fill-current" />
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <div className="flex-1 p-4 flex flex-col justify-center min-w-0">
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <span className="font-bold text-sm text-white truncate">{item.name}</span>
-                                                        <span className="text-[8px] bg-primary text-black font-black px-1 py-0.5 rounded-sm shrink-0">MASTERED</span>
-                                                    </div>
-                                                    <span className="text-xs text-text-subdued truncate">{item.artist}</span>
+                                                <div className="flex-1 p-4 min-w-0">
+                                                    <div className="font-bold text-base text-white truncate">{item.name}</div>
+                                                    <div className="text-sm text-text-subdued truncate">{item.artist}</div>
                                                 </div>
                                             </div>
-                                        ))
-                                    ) : (
-                                        // Fallback items from categories if no recent history
-                                        categories.slice(0, 6).map((cat, i) => (
-                                            <div key={i} className="flex items-center bg-white/5 hover:bg-white/10 transition-all rounded-lg overflow-hidden group cursor-pointer border border-white/5">
-                                                <div className="w-16 h-16 bg-neutral-800 flex-shrink-0">
-                                                    <img src={cat.icons?.[0]?.url} className="w-full h-full object-cover" alt={cat.name} />
-                                                </div>
-                                                <div className="flex-1 p-4">
-                                                    <span className="font-bold text-sm text-white truncate block">{cat.name}</span>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
+                                        ))}
+                                    </div>
                                 </div>
-                            </section>
-                        )}
+                                {activeFilter === 'All' && (
+                                    <div className="md:col-span-2 xl:col-span-1">
+                                        <FeedbackCard onClick={() => setIsReviewOpen(true)} />
+                                    </div>
+                                )}
+                            </div>
+                        </section>
 
-                        {/* Vertical Rows Contextual Sections */}
-                        <div className="space-y-4">
+                        <div className="space-y-8">
                             {activeFilter === 'Music' && musicSections.map(s => renderCardRow(s.title, s.items))}
                             {activeFilter === 'Podcasts' && podcastSections.map(s => renderCardRow(s.title, s.items))}
                             {activeFilter === 'All' && allSections.map(s => renderCardRow(s.title, s.items))}
                             {activeFilter === 'Audiobooks' && audiobookSections.map(s => renderCardRow(s.title, s.items))}
                             {activeFilter === 'Artists' && artistsList.map(s => renderCardRow(s.title, s.items))}
 
-                            {/* Journeys Grid section */}
                             {activeFilter === 'Journeys' && (
-                                <section className="space-y-6">
-                                    <h2 className="text-xl font-bold">Recommended Journeys</h2>
-                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                                        {categories.map((cat, i) => (
-                                            <div
-                                                key={cat.id}
-                                                onClick={() => selectCategory(cat.name as JourneyPath)}
-                                                className="bg-[#181818] p-4 rounded-xl hover:bg-[#282828] transition-all group border border-transparent hover:border-white/5 cursor-pointer"
-                                            >
-                                                <div className={`aspect-square bg-gradient-to-br ${i % 2 === 0 ? 'from-blue-600 to-indigo-900' : 'from-orange-600 to-red-900'} rounded-lg mb-4 relative flex items-end p-4 shadow-lg overflow-hidden`}>
-                                                    <img src={cat.icons?.[0]?.url} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt={cat.name} />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                                                    <span className="relative font-black text-xl drop-shadow-md text-white">{cat.name}</span>
-                                                    <button className="absolute right-3 bottom-3 p-3 bg-primary rounded-full text-black shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                                                        <Play fill="black" size={20} />
-                                                    </button>
-                                                </div>
-                                                <h3 className="font-bold text-sm mb-1 truncate">{cat.name}</h3>
-                                                <p className="text-[10px] text-text-subdued uppercase tracking-widest font-bold">Active Path</p>
-                                            </div>
-                                        ))}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div 
+                                        onClick={() => selectCategory("English Vocabulary Builder")}
+                                        className="bg-[#1c1c1c] p-6 rounded-3xl hover:bg-[#252525] transition-all cursor-pointer border border-white/5 flex gap-6"
+                                    >
+                                        <img src="/vocab_builder.png" alt="English" className="w-32 h-32 rounded-xl object-cover" />
+                                        <div className="flex flex-col justify-center">
+                                            <span className="text-primary text-[10px] font-black tracking-widest uppercase mb-1">LEARNING ACTIVE</span>
+                                            <h3 className="text-2xl font-black text-white">Vocabulary Builder</h3>
+                                            <p className="text-sm text-text-subdued mt-1">Language fundamentals</p>
+                                        </div>
                                     </div>
-                                </section>
+                                    <div 
+                                        onClick={() => selectCategory("Communication Skills")}
+                                        className="bg-[#1c1c1c] p-6 rounded-3xl hover:bg-[#252525] transition-all cursor-pointer border border-white/5 flex gap-6"
+                                    >
+                                        <img src="/comm_pro.png" alt="Comm" className="w-32 h-32 rounded-xl object-cover" />
+                                        <div className="flex flex-col justify-center">
+                                            <span className="text-orange-500 text-[10px] font-black tracking-widest uppercase mb-1">SOFT SKILLS</span>
+                                            <h3 className="text-2xl font-black text-white">Communication Pro</h3>
+                                            <p className="text-sm text-text-subdued mt-1">Suggested for you</p>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>
                 </main>
 
-                {/* Right panel inside that row = flex-shrink-0 with fixed width */}
                 {activeFilter !== 'Journeys' && (
-                    <div className="flex-shrink-0 w-[340px] h-full ml-2">
+                    <div className="flex-shrink-0 w-[300px] h-full ml-2 hidden xl:flex">
                         <NowPlayingSidebar />
                     </div>
                 )}
             </div>
+            <ReviewModal isOpen={isReviewOpen} onClose={() => setIsReviewOpen(false)} />
         </div>
     );
 };
