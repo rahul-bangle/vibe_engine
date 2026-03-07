@@ -260,9 +260,13 @@ const NowPlayingScreen: React.FC<{
   track: Track;
   isPlaying: boolean;
   miniCurrentTime: number;
+  volume: number;
+  onVolumeChange: (v: number) => void;
   onPlayPause: () => void;
   onClose: () => void;
-}> = ({ track, isPlaying, miniCurrentTime, onPlayPause, onClose }) => {
+  onSkipNext?: () => void;
+  onSkipBack?: () => void;
+}> = ({ track, isPlaying, miniCurrentTime, volume, onVolumeChange, onPlayPause, onClose, onSkipNext, onSkipBack }) => {
   const [liked, setLiked] = useState(false);
 
   return (
@@ -307,7 +311,7 @@ const NowPlayingScreen: React.FC<{
         </div>
 
         <div className="mb-6">
-          <div className="h-1 bg-white/20 rounded-full mb-2">
+          <div className="h-1 bg-white/20 rounded-full mb-2 cursor-pointer relative group">
             <div
               className="h-full bg-white rounded-full transition-all duration-100"
               style={{ width: `${Math.min((miniCurrentTime / (track.duration || 30)) * 100, 100)}%` }}
@@ -320,13 +324,28 @@ const NowPlayingScreen: React.FC<{
         </div>
 
         <div className="flex items-center justify-between mb-8">
-          <button><Shuffle className="w-6 h-6 text-[#b3b3b3]" /></button>
-          <button><SkipBack className="w-9 h-9 text-white fill-current" /></button>
+          <button className="active:opacity-50"><Shuffle className="w-6 h-6 text-[#b3b3b3]" /></button>
+          <button onClick={onSkipBack} className="active:opacity-50"><SkipBack className="w-9 h-9 text-white fill-current" /></button>
           <button onClick={onPlayPause} className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl active:scale-95 transition-transform">
             {isPlaying ? <Pause className="w-9 h-9 text-black fill-current" /> : <Play className="w-9 h-9 text-black fill-current ml-1" />}
           </button>
-          <button><SkipForward className="w-9 h-9 text-white fill-current" /></button>
-          <button><Repeat className="w-6 h-6 text-[#b3b3b3]" /></button>
+          <button onClick={onSkipNext} className="active:opacity-50"><SkipForward className="w-9 h-9 text-white fill-current" /></button>
+          <button className="active:opacity-50"><Repeat className="w-6 h-6 text-[#b3b3b3]" /></button>
+        </div>
+
+        <div className="flex items-center gap-4 mb-8">
+          <Volume2 className="w-5 h-5 text-[#b3b3b3]" />
+          <div 
+            className="flex-1 h-1 bg-white/20 rounded-full relative"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const val = (e.clientX - rect.left) / rect.width;
+              onVolumeChange(Math.max(0, Math.min(1, val)));
+            }}
+          >
+            <div className="h-full bg-white rounded-full" style={{ width: `${volume * 100}%` }} />
+            <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg" style={{ left: `calc(${volume * 100}% - 6px)` }} />
+          </div>
         </div>
 
         <div className="flex items-center justify-between px-2">
@@ -721,6 +740,7 @@ export const MobileJourneyPlayer: React.FC<{ path: JourneyPath; onClose: () => v
   const [isCompleted, setIsCompleted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
+  const [volume, setVolume] = useState(0.8);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const PLAY_LIMIT = 8;
 
@@ -736,6 +756,10 @@ export const MobileJourneyPlayer: React.FC<{ path: JourneyPath; onClose: () => v
     if (isPlaying) audio.play().catch(e => console.warn(e));
     else audio.pause();
   }, [isPlaying, segmentIndex, segments]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume;
+  }, [volume]);
 
   const track = segments[segmentIndex];
   const hasAdvancedRef = useRef(false); // gate per segment — resets on segmentIndex change
@@ -904,6 +928,21 @@ export const MobileJourneyPlayer: React.FC<{ path: JourneyPath; onClose: () => v
           </div>
         </div>
 
+        {/* Volume - Mobile Player */}
+        <div className="w-full max-w-[200px] flex items-center gap-4 mb-10">
+          <Volume2 className="w-4 h-4 text-white/40" />
+          <div 
+            className="flex-1 h-1 bg-white/10 rounded-full relative"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const val = (e.clientX - rect.left) / rect.width;
+              setVolume(Math.max(0, Math.min(1, val)));
+            }}
+          >
+            <div className="h-full bg-white/60 rounded-full" style={{ width: `${volume * 100}%` }} />
+          </div>
+        </div>
+
         <div className="flex items-center justify-center gap-12">
           <button onClick={() => { setSegmentIndex(Math.max(0, segmentIndex - 1)); setCurrentTime(0); }}>
             <SkipBack className="w-10 h-10 text-white fill-current" />
@@ -944,6 +983,7 @@ export const MobileLayout: React.FC = () => {
   const [screen, setScreen] = useState<MobileScreen>('tabs');
   const [miniTrack, setMiniTrack] = useState<Track | null>(null);
   const [miniCurrentTime, setMiniCurrentTime] = useState(0);
+  const [miniVolume, setMiniVolume] = useState(0.8);
   const miniAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const { state, updateOnboardingStep, setGlobalPlaying } = useJourney();
@@ -970,6 +1010,10 @@ export const MobileLayout: React.FC = () => {
     if (miniPlaying) audio.play().catch(e => console.warn('Playback failed:', e));
     else audio.pause();
   }, [miniPlaying, miniTrack]);
+
+  useEffect(() => {
+    if (miniAudioRef.current) miniAudioRef.current.volume = miniVolume;
+  }, [miniVolume]);
 
   const handlePlayTrack = (track: Track | Playlist) => {
     setMiniTrack(track as Track);
@@ -1060,8 +1104,17 @@ export const MobileLayout: React.FC = () => {
               track={miniTrack}
               isPlaying={miniPlaying}
               miniCurrentTime={miniCurrentTime}
+              volume={miniVolume}
+              onVolumeChange={setMiniVolume}
               onPlayPause={() => setMiniPlaying(p => !p)}
               onClose={() => setScreen('tabs')}
+              onSkipNext={() => {
+                // Just a placeholder for next trending track
+                spotifyService.searchTracks('Trending').then(res => setMiniTrack(res[0]));
+              }}
+              onSkipBack={() => {
+                if (miniAudioRef.current) miniAudioRef.current.currentTime = 0;
+              }}
             />
           )}
         </AnimatePresence>
