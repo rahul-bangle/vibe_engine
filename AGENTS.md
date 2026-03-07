@@ -20,6 +20,7 @@ feature_kickoff.md runs first in every conversation, then hands off to the corre
 | 6 | `/vibe:build` | `prompts/vibe_build.md` ← wraps `/opsx:apply` |
 | 7 | `/vibe:verify` | `prompts/vibe_verify.md` |
 | 8 | `/opsx:archive` | OpenSpec CLI |
+| 9 | `/vibe:opencode` | `prompts/vibe_opencode.md` ← OpenCode AI |
 
 ---
 
@@ -92,6 +93,7 @@ OpenSpec writes to: `Vibe_Engine/openspec/changes/[feature-name]/`
 | **gate-6b** | `/vibe:build` | `projects/[name]/.gates/gate-6b-wave2-verified.md` |
 | **gate-6** | `/vibe:build` | `projects/[name]/.gates/gate-6-build-approved.md` |
 | **gate-8** | `/vibe:verify` | `projects/[name]/.gates/gate-8-verify-approved.md` |
+| **gate-9** | `/vibe:opencode` | `projects/[name]/.gates/gate-9-opencode-done.md` |
 
 ---
 
@@ -126,3 +128,4 @@ Vibe_Engine/
 │       ├── HANDOFF.md          ← written by /vibe:build on completion
 │       ├── FAILURE.md          ← only exists if something broke
 │       └── verify-report.md    ← written by /vibe:verify
+```
