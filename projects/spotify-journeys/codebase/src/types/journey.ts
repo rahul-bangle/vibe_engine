@@ -21,7 +21,7 @@ export interface JourneyState {
     activeFilter: string;
     globalTrack: Track | null;
     isGlobalPlaying: boolean;
-    onboardingStep: 'naming' | 'dashboard' | 'pointing_sidebar' | 'pointing_start' | 'playing' | 'completed' | null;
+    onboardingStep: 'naming' | 'dashboard' | 'pointing_sidebar' | 'pointing_start' | 'playing' | 'completed' | 'finished' | null;
 }
 
 export interface JourneyContextType {

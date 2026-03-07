@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Home, Search, Library, Compass, X, Play, Pause, Heart,
-  MoreHorizontal, ChevronLeft, SkipBack, SkipForward, Shuffle,
+  MoreHorizontal, ChevronLeft, ChevronRight, SkipBack, SkipForward, Shuffle,
   Repeat, ChevronDown, MoreVertical, MonitorSpeaker, ListMusic,
   Bell, Clock, Settings
 } from 'lucide-react';
-import { useParams } from 'react-router-dom';
 import { useJourney } from '../hooks/useJourney';
 import { useTracking } from '../hooks/useTracking';
 import { spotifyService } from '../services/spotifyService';
@@ -21,13 +20,96 @@ import confetti from 'canvas-confetti';
 // TYPES
 // ─────────────────────────────────────────────
 type Tab = 'home' | 'search' | 'library' | 'journeys';
-type MobileScreen = 'tabs' | 'journey-detail' | 'now-playing';
+type MobileScreen = 'tabs' | 'journey-detail' | 'now-playing' | 'journey-player';
+
+const formatTime = (time: number) => {
+  if (isNaN(time)) return '0:00';
+  const mins = Math.floor(time / 60);
+  const secs = Math.floor(time % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+// ─────────────────────────────────────────────
+// SPOTLIGHT COACH MARK
+// ─────────────────────────────────────────────
+const SpotlightCoachMark: React.FC<{
+  targetSelector: string;
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  onDismiss: () => void;
+  tooltipPosition?: 'top' | 'bottom';
+}> = ({ targetSelector, title, subtitle, ctaLabel, onDismiss, tooltipPosition = 'bottom' }) => {
+  const [rect, setRect] = React.useState<DOMRect | null>(null);
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  React.useEffect(() => {
+    const measure = () => {
+      const el = document.querySelector(targetSelector);
+      if (el) setRect(el.getBoundingClientRect());
+    };
+    const t = setTimeout(measure, 300);
+    return () => clearTimeout(t);
+  }, [targetSelector]);
+
+  const pad = 10;
+  const hole = rect ? {
+    top: rect.top - pad,
+    left: rect.left - pad,
+    width: rect.width + pad * 2,
+    height: rect.height + pad * 2,
+  } : { top: H / 2 - 40, left: W / 2 - 80, width: 160, height: 80 };
+
+  const tooltipTop = tooltipPosition === 'bottom' ? hole.top + hole.height + 16 : undefined;
+  const tooltipBottom = tooltipPosition === 'top' ? H - hole.top + 16 : undefined;
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[500] pointer-events-none"
+    >
+      {/* TOP strip */}
+      <div className="absolute bg-black/85 pointer-events-auto" style={{ top: 0, left: 0, right: 0, height: Math.max(hole.top, 0) }} />
+      {/* BOTTOM strip */}
+      <div className="absolute bg-black/85 pointer-events-auto" style={{ top: hole.top + hole.height, left: 0, right: 0, bottom: 0 }} />
+      {/* LEFT strip */}
+      <div className="absolute bg-black/85 pointer-events-auto" style={{ top: hole.top, left: 0, width: Math.max(hole.left, 0), height: hole.height }} />
+      {/* RIGHT strip */}
+      <div className="absolute bg-black/85 pointer-events-auto" style={{ top: hole.top, left: hole.left + hole.width, right: 0, height: hole.height }} />
+
+      {/* Green glow border around the hole */}
+      <div className="absolute rounded-2xl pointer-events-none"
+        style={{
+          top: hole.top, left: hole.left, width: hole.width, height: hole.height,
+          boxShadow: '0 0 0 2px #1db954, 0 0 24px rgba(29,185,84,0.6)',
+          borderRadius: 14,
+        }}
+      />
+
+      {/* Tooltip card */}
+      <motion.div
+        initial={{ opacity: 0, y: tooltipPosition === 'bottom' ? -12 : 12 }}
+        animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, type: 'spring', stiffness: 220 }}
+        className="absolute left-4 right-4 pointer-events-auto"
+        style={{ top: tooltipTop, bottom: tooltipBottom }}
+      >
+        <div className="bg-[#181818] rounded-2xl p-5 border border-white/10 shadow-2xl">
+          <h3 className="text-lg font-black text-white mb-1">{title}</h3>
+          <p className="text-[#b3b3b3] text-sm mb-4 leading-relaxed">{subtitle}</p>
+          <button onClick={onDismiss}
+            className="w-full bg-[#1db954] text-black font-black text-sm py-3 rounded-full flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          >
+            {ctaLabel} <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 // ─────────────────────────────────────────────
 // MOBILE HEADER + HAMBURGER DRAWER
 // ─────────────────────────────────────────────
-
-
 const MobileHeader: React.FC<{ onTabChange: (tab: Tab) => void }> = ({ onTabChange }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { state } = useJourney();
@@ -41,7 +123,6 @@ const MobileHeader: React.FC<{ onTabChange: (tab: Tab) => void }> = ({ onTabChan
 
   return (
     <>
-      {/* ── Top Bar ── */}
       <div className="flex items-center justify-between px-4 py-3 bg-black sticky top-0 z-[100]">
         <div className="flex items-center gap-2">
           <SpotifyIcon size={32} />
@@ -52,32 +133,25 @@ const MobileHeader: React.FC<{ onTabChange: (tab: Tab) => void }> = ({ onTabChan
         </button>
       </div>
 
-      {/* ── Backdrop ── */}
       <AnimatePresence>
         {drawerOpen && (
           <motion.div
             key="backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setDrawerOpen(false)}
             className="fixed inset-0 bg-black/60 z-[200] backdrop-blur-sm"
           />
         )}
       </AnimatePresence>
 
-      {/* ── Drawer ── */}
       <AnimatePresence>
         {drawerOpen && (
           <motion.div
             key="drawer"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed top-0 right-0 h-full w-72 bg-[#121212] z-[300] flex flex-col shadow-2xl"
           >
-            {/* Profile */}
             <div className="flex items-center justify-between px-6 pt-14 pb-6 border-b border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-neutral-700 rounded-full flex items-center justify-center text-white font-black text-sm uppercase">
@@ -93,7 +167,6 @@ const MobileHeader: React.FC<{ onTabChange: (tab: Tab) => void }> = ({ onTabChan
               </button>
             </div>
 
-            {/* Nav Links */}
             <div className="flex-1 px-2 py-4 overflow-y-auto">
               {navItems.map(({ icon: Icon, label, tab }) => (
                 <button
@@ -105,9 +178,7 @@ const MobileHeader: React.FC<{ onTabChange: (tab: Tab) => void }> = ({ onTabChan
                   <span className="font-bold text-sm text-white">{label}</span>
                 </button>
               ))}
-
               <div className="my-3 border-t border-white/10" />
-
               {[
                 { icon: Heart, label: 'Liked Songs' },
                 { icon: Bell, label: 'Notifications' },
@@ -124,7 +195,6 @@ const MobileHeader: React.FC<{ onTabChange: (tab: Tab) => void }> = ({ onTabChan
               ))}
             </div>
 
-            {/* Premium Banner */}
             <div className="mx-4 mb-8 p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20">
               <p className="font-black text-white text-sm mb-1">Go Premium</p>
               <p className="text-[11px] text-[#b3b3b3] mb-3">No ads. Offline listening.</p>
@@ -150,24 +220,17 @@ const MiniPlayer: React.FC<{
   onOpen: () => void;
 }> = ({ track, isPlaying, currentTime, onPlayPause, onOpen }) => {
   if (!track) return null;
-
-  const progress = Math.min((currentTime / 30) * 100, 100);
+  // FIX: use 8s limit not 30s
+  const progress = Math.min((currentTime / 8) * 100, 100);
 
   return (
     <div
       onClick={onOpen}
       className="mx-2 mb-2 bg-[#282828] rounded-xl h-16 flex items-center px-3 gap-3 cursor-pointer select-none relative z-40 border border-white/5 shadow-2xl"
     >
-      {/* Album Art */}
       <div className="relative flex-shrink-0">
-        <img
-          src={track.albumArt || (track as any).image}
-          alt=""
-          className="w-11 h-11 rounded-lg shadow-lg object-cover"
-        />
+        <img src={track.albumArt || (track as any).image} alt="" className="w-11 h-11 rounded-lg shadow-lg object-cover" />
       </div>
-
-      {/* Track Info */}
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-black text-white truncate leading-tight mb-0.5">{track.name}</p>
         <p className="text-[11px] font-medium text-[#b3b3b3] truncate flex items-center gap-1.5">
@@ -175,38 +238,23 @@ const MiniPlayer: React.FC<{
           {track.artist || (track as any).description}
         </p>
       </div>
-
-      {/* Controls */}
       <div className="flex items-center gap-1">
-        <button
-          onClick={(e) => { e.stopPropagation(); onPlayPause(); }}
-          className="w-10 h-10 flex items-center justify-center active:scale-90 transition-transform"
-        >
-          {isPlaying
-            ? <Pause className="w-6 h-6 text-white fill-current" />
-            : <Play className="w-6 h-6 text-white fill-current" />}
+        <button onClick={(e) => { e.stopPropagation(); onPlayPause(); }} className="w-10 h-10 flex items-center justify-center active:scale-90 transition-transform">
+          {isPlaying ? <Pause className="w-6 h-6 text-white fill-current" /> : <Play className="w-6 h-6 text-white fill-current" />}
         </button>
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="w-8 h-8 flex items-center justify-center"
-        >
+        <button onClick={(e) => e.stopPropagation()} className="w-8 h-8 flex items-center justify-center">
           <SkipForward className="w-5 h-5 text-white fill-current" />
         </button>
       </div>
-
-      {/* Progress Bar */}
       <div className="absolute bottom-0 left-3 right-3 h-0.5 bg-white/10 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-primary transition-all duration-300"
-          style={{ width: `${progress}%` }}
-        />
+        <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
 };
 
 // ─────────────────────────────────────────────
-// NOW PLAYING SCREEN (full screen)
+// NOW PLAYING SCREEN
 // ─────────────────────────────────────────────
 const NowPlayingScreen: React.FC<{
   track: Track;
@@ -219,54 +267,35 @@ const NowPlayingScreen: React.FC<{
 
   return (
     <motion.div
-      initial={{ y: '100%' }}
-      animate={{ y: 0 }}
-      exit={{ y: '100%' }}
+      initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="fixed inset-0 z-[200] flex flex-col"
       style={{ background: '#121212' }}
     >
-      {/* Blurred Background */}
       <div className="absolute inset-0 overflow-hidden">
-        <img
-          src={track.albumArt || (track as any).image}
-          alt=""
-          className="w-full h-full object-cover blur-3xl scale-110 opacity-30"
-        />
+        <img src={track.albumArt || (track as any).image} alt="" className="w-full h-full object-cover blur-3xl scale-110 opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-black" />
       </div>
 
       <div className="relative flex flex-col h-full px-6 pt-12 pb-8">
-        {/* Top Bar */}
         <div className="flex items-center justify-between mb-8">
-          <button onClick={onClose} className="p-2">
-            <ChevronDown className="w-7 h-7 text-white" />
-          </button>
+          <button onClick={onClose} className="p-2"><ChevronDown className="w-7 h-7 text-white" /></button>
           <div className="text-center">
             <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Now Playing</p>
             <p className="text-sm font-bold text-white truncate max-w-[200px]">{track.name}</p>
           </div>
-          <button className="p-2">
-            <MoreHorizontal className="w-6 h-6 text-white" />
-          </button>
+          <button className="p-2"><MoreHorizontal className="w-6 h-6 text-white" /></button>
         </div>
 
-        {/* Album Art */}
         <div className="flex-1 flex items-center justify-center mb-8">
           <motion.div
-            animate={{ scale: isPlaying ? 1 : 0.92 }}
-            transition={{ duration: 0.3 }}
+            animate={{ scale: isPlaying ? 1 : 0.92 }} transition={{ duration: 0.3 }}
             className="w-full aspect-square max-w-[320px] rounded-xl overflow-hidden shadow-2xl"
           >
-            <img
-              src={track.albumArt || (track as any).image}
-              alt={track.name}
-              className="w-full h-full object-cover"
-            />
+            <img src={track.albumArt || (track as any).image} alt={track.name} className="w-full h-full object-cover" />
           </motion.div>
         </div>
 
-        {/* Track Info + Like */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-black text-white truncate">{track.name}</h2>
@@ -277,36 +306,29 @@ const NowPlayingScreen: React.FC<{
           </button>
         </div>
 
-        {/* Progress */}
         <div className="mb-6">
           <div className="h-1 bg-white/20 rounded-full mb-2">
             <div
-              className="h-full bg-white rounded-full transition-all duration-300"
-              style={{ width: `${(miniCurrentTime / 30) * 100}%` }}
+              className="h-full bg-white rounded-full transition-all duration-100"
+              style={{ width: `${Math.min((miniCurrentTime / (track.duration || 30)) * 100, 100)}%` }}
             />
           </div>
-          <div className="flex justify-between text-[11px] font-bold text-[#b3b3b3] uppercase tracking-widest">
-            <span>0:{Math.floor(miniCurrentTime).toString().padStart(2, '0')}</span><span>0:30</span>
+          <div className="flex justify-between mt-2.5 text-[11px] font-mono text-[#b3b3b3] tabular-nums">
+            <span>{formatTime(miniCurrentTime)}</span>
+            <span>{formatTime(track.duration || 30)}</span>
           </div>
         </div>
 
-        {/* Controls */}
         <div className="flex items-center justify-between mb-8">
           <button><Shuffle className="w-6 h-6 text-[#b3b3b3]" /></button>
           <button><SkipBack className="w-9 h-9 text-white fill-current" /></button>
-          <button
-            onClick={onPlayPause}
-            className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl active:scale-95 transition-transform"
-          >
-            {isPlaying
-              ? <Pause className="w-9 h-9 text-black fill-current" />
-              : <Play className="w-9 h-9 text-black fill-current ml-1" />}
+          <button onClick={onPlayPause} className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl active:scale-95 transition-transform">
+            {isPlaying ? <Pause className="w-9 h-9 text-black fill-current" /> : <Play className="w-9 h-9 text-black fill-current ml-1" />}
           </button>
           <button><SkipForward className="w-9 h-9 text-white fill-current" /></button>
           <button><Repeat className="w-6 h-6 text-[#b3b3b3]" /></button>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between px-2">
           <MonitorSpeaker className="w-5 h-5 text-primary" />
           <ListMusic className="w-5 h-5 text-white" />
@@ -390,7 +412,6 @@ const HomeTab: React.FC<{ onPlayTrack: (track: Track | Playlist) => void }> = ({
 
   return (
     <div className="flex-1 overflow-y-auto no-scrollbar pb-36">
-      {/* Greeting Row */}
       <div className="px-4 pt-6 pb-4 flex items-center justify-between">
         <h1 className="text-2xl font-black text-white">{getGreeting()}</h1>
         <div className="flex gap-4">
@@ -399,7 +420,6 @@ const HomeTab: React.FC<{ onPlayTrack: (track: Track | Playlist) => void }> = ({
         </div>
       </div>
 
-      {/* Jump Back In Grid */}
       <div className="px-4 mb-8">
         <h2 className="text-xs font-black text-white/40 uppercase tracking-[0.2em] mb-3">Jump back in</h2>
         {isLoading ? (
@@ -410,8 +430,7 @@ const HomeTab: React.FC<{ onPlayTrack: (track: Track | Playlist) => void }> = ({
           <div className="grid grid-cols-2 gap-2">
             {recentTracks.map((item, i) => (
               <div
-                key={i}
-                onClick={() => onPlayTrack(item)}
+                key={i} onClick={() => onPlayTrack(item)}
                 className="flex items-center bg-[#282828]/60 rounded-md overflow-hidden h-14 active:bg-[#3e3e3e] transition-all border border-white/5"
               >
                 <img src={item.albumArt || item.image} alt="" className="w-14 h-14 object-cover flex-shrink-0" />
@@ -467,7 +486,6 @@ const SearchTab: React.FC = () => {
           )}
         </div>
       </div>
-
       {query ? (
         <div className="space-y-4">
           {searching
@@ -548,17 +566,29 @@ const LibraryTab: React.FC = () => {
 
 // ─────────────────────────────────────────────
 // JOURNEY DETAIL SCREEN
+// FIX: uses onStartJourney callback instead of startJourney() to open mobile player
 // ─────────────────────────────────────────────
-const JourneyDetailScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  const { state, startJourney } = useJourney();
+const JourneyDetailScreen: React.FC<{
+  path: JourneyPath;
+  onBack: () => void;
+  onStartJourney: () => void;
+}> = ({ path, onBack, onStartJourney }) => {
   const { trackEvent } = useTracking();
-  const path = state.currentPath || 'English Vocabulary Builder';
+
   const benefits: Record<string, string[]> = {
     'English Vocabulary Builder': ['Learn 20+ corporate words daily', 'Perfect pronunciation with audio', 'Contextual usage in emails', 'Daily recall practice'],
     'Communication Skills': ['Master active listening', 'Lead meetings confidently', 'Body language & vocal tone', 'Conflict resolution frameworks'],
     'Productivity Habits': ['Time-blocking & deep work', 'Email management strategies', 'Building a second brain', 'Ending procrastination'],
   };
   const bens = benefits[path] || benefits['English Vocabulary Builder'];
+
+  const [btnPulse, setBtnPulse] = useState(false);
+  useEffect(() => {
+    // After 1s, start pulsing to draw attention
+    const t = setTimeout(() => setBtnPulse(true), 1000);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[150] bg-black overflow-y-auto no-scrollbar">
       <div className="relative h-72 bg-gradient-to-b from-primary/40 to-black">
@@ -571,12 +601,39 @@ const JourneyDetailScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       </div>
       <div className="px-4 py-6">
-        <button
-          onClick={() => { startJourney(); trackEvent('JOURNEY_START', path); }}
-          className="w-full bg-primary text-black font-black text-lg py-4 rounded-full flex items-center justify-center gap-3 active:scale-95 transition-transform"
+        {/* Tap hint label */}
+        <motion.p
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="text-center text-[11px] font-black text-primary uppercase tracking-[0.2em] mb-3"
         >
-          <Play className="w-6 h-6 fill-current" /> START SESSION
-        </button>
+          👇 Tap to begin your session
+        </motion.p>
+        {/* Pulsing glow ring behind button */}
+        <div className="relative">
+          {btnPulse && (
+            <motion.div
+              animate={{ scale: [1, 1.08, 1], opacity: [0.6, 0.2, 0.6] }}
+              transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+              className="absolute inset-0 rounded-full bg-primary"
+            />
+          )}
+          <motion.button
+            animate={btnPulse ? { scale: [1, 1.03, 1] } : {}}
+            transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+            onClick={() => { onStartJourney(); trackEvent('JOURNEY_START', path); }}
+            className="relative w-full bg-primary text-black font-black text-lg py-4 rounded-full flex items-center justify-center gap-3 active:scale-95 shadow-[0_0_30px_rgba(29,185,84,0.5)]"
+          >
+            <motion.div
+              animate={{ x: [0, 4, 0] }}
+              transition={{ repeat: Infinity, duration: 0.8, ease: 'easeInOut' }}
+            >
+              <Play className="w-6 h-6 fill-current" />
+            </motion.div>
+            START SESSION
+          </motion.button>
+        </div>
       </div>
       <div className="px-4 pb-12">
         <h2 className="text-xl font-black text-white mb-4">Curriculum</h2>
@@ -597,9 +654,11 @@ const JourneyDetailScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
 // ─────────────────────────────────────────────
 // JOURNEYS TAB
+// FIX: removed redundant tooltip — nav bar handles pointing_sidebar
 // ─────────────────────────────────────────────
 const JourneysTab: React.FC<{ onSelectJourney: (path: JourneyPath) => void }> = ({ onSelectJourney }) => {
   const { state, updateOnboardingStep } = useJourney();
+
   useEffect(() => {
     if (state.onboardingStep === 'pointing_sidebar') updateOnboardingStep('pointing_start');
   }, [state.onboardingStep, updateOnboardingStep]);
@@ -616,25 +675,29 @@ const JourneysTab: React.FC<{ onSelectJourney: (path: JourneyPath) => void }> = 
         <h1 className="text-2xl font-black text-white mb-1">Growth Journeys</h1>
         <p className="text-sm text-[#b3b3b3]">Listen. Learn. Evolve.</p>
       </div>
-      <div className="px-4 space-y-4 relative">
-        {state.onboardingStep === 'pointing_start' && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-            className="absolute -top-12 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center pointer-events-none"
-          >
-            <div className="bg-primary text-black px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center gap-2 mb-2">
-              👉 Click to start path!
-            </div>
-            <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}
-              className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[12px] border-transparent border-t-primary"
-            />
-          </motion.div>
-        )}
-        {journeys.map((j) => (
+
+      {/* pointing_start coach mark — highlights first journey card */}
+      {/* No spotlight here — the hole already lets taps through.
+          The green ring on the card is enough visual cue. */}
+
+      <div className="px-4 space-y-4">
+        {journeys.map((j, idx) => (
           <div
-            key={j.id} onClick={() => onSelectJourney(j.id)}
-            className={`bg-gradient-to-br ${j.color} rounded-2xl p-5 cursor-pointer active:scale-[0.98] transition-all relative overflow-hidden h-40 flex flex-col justify-end`}
+            key={j.id}
+            data-journey-card={idx}
+            onClick={() => onSelectJourney(j.id)}
+            className={`bg-gradient-to-br ${j.color} rounded-2xl p-5 cursor-pointer active:scale-[0.98] transition-all relative overflow-hidden h-40 flex flex-col justify-end ${state.onboardingStep === 'pointing_start' && idx === 0 ? 'ring-[3px] ring-[#1db954] shadow-[0_0_24px_rgba(29,185,84,0.5)]' : ''}`}
           >
+            {/* Pulsing "tap me" badge — only on first card during pointing_start */}
+            {state.onboardingStep === 'pointing_start' && idx === 0 && (
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ repeat: Infinity, duration: 1.4 }}
+                className="absolute top-3 right-3 z-20 bg-[#1db954] text-black text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg"
+              >
+                Tap me! 👇
+              </motion.div>
+            )}
             <div className="absolute top-4 right-4 text-5xl opacity-20">{j.emoji}</div>
             <div className="relative z-10">
               <span className="text-[10px] font-black uppercase tracking-widest text-white/70 mb-1 block">{j.subtitle}</span>
@@ -649,8 +712,9 @@ const JourneysTab: React.FC<{ onSelectJourney: (path: JourneyPath) => void }> = 
 
 // ─────────────────────────────────────────────
 // MOBILE JOURNEY PLAYER
+// FIX: loads 4 tracks, fixed time display
 // ─────────────────────────────────────────────
-export const MobileJourneyPlayer: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+export const MobileJourneyPlayer: React.FC<{ path: JourneyPath; onClose: () => void }> = ({ path, onClose }) => {
   const { state, completeDay, setGlobalPlaying, updateOnboardingStep } = useJourney();
   const [segments, setSegments] = useState<Track[]>([]);
   const [segmentIndex, setSegmentIndex] = useState(0);
@@ -661,7 +725,7 @@ export const MobileJourneyPlayer: React.FC<{ onClose: () => void }> = ({ onClose
   const PLAY_LIMIT = 8;
 
   useEffect(() => {
-    spotifyService.searchTracks(state.currentPath || 'English Vocabulary Builder')
+    spotifyService.searchTracks(path)
       .then(res => setSegments(res.slice(0, 1)));
     setGlobalPlaying(false);
   }, []);
@@ -674,14 +738,20 @@ export const MobileJourneyPlayer: React.FC<{ onClose: () => void }> = ({ onClose
   }, [isPlaying, segmentIndex, segments]);
 
   const track = segments[segmentIndex];
+  const hasAdvancedRef = useRef(false); // gate per segment — resets on segmentIndex change
+
+  // Reset gate whenever segment changes
+  useEffect(() => {
+    hasAdvancedRef.current = false;
+    setCurrentTime(0);
+  }, [segmentIndex]);
 
   const handleNext = () => {
-    if (isCompleted) return;
+    if (isCompleted || hasAdvancedRef.current) return;
+    hasAdvancedRef.current = true;
     if (segmentIndex < segments.length - 1) {
-      setSegmentIndex(v => v + 1);
-      setCurrentTime(0);
-    }
-    else {
+      setSegmentIndex(v => v + 1); // useEffect above resets hasAdvancedRef
+    } else {
       handleComplete();
     }
   };
@@ -689,42 +759,91 @@ export const MobileJourneyPlayer: React.FC<{ onClose: () => void }> = ({ onClose
   const handleComplete = () => {
     setIsCompleted(true);
     completeDay();
-    updateOnboardingStep('completed');
-    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#1DB954', '#ffffff', '#191414'] });
+    if (state.onboardingStep !== 'completed' && state.onboardingStep !== null) {
+      updateOnboardingStep('completed');
+    }
+    confetti({ particleCount: 200, spread: 80, origin: { y: 0.5 }, colors: ['#1DB954', '#ffffff', '#191414'], zIndex: 10001 });
+    setTimeout(() => confetti({ particleCount: 100, spread: 120, origin: { y: 0.3 }, colors: ['#1DB954', '#ffffff'], zIndex: 10001 }), 400);
   };
 
-  if (isCompleted) return (
-    <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-8 text-center">
-      <div className="w-24 h-24 bg-primary rounded-3xl mb-8 flex items-center justify-center shadow-2xl">
-        <SpotifyIcon size={48} color="black" />
-      </div>
-      <h1 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase">CONGRATULATIONS!</h1>
-      <p className="text-[#b3b3b3] text-lg mb-10 leading-relaxed font-medium">
-        You've completed your evolution session, {state.userName}!
-      </p>
-      <div className="bg-primary/20 p-8 rounded-[2rem] border border-primary/30 w-full mb-10">
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-2">Knowledge Gained</p>
-        <p className="text-4xl font-black text-white tracking-widest">+500 XP</p>
-      </div>
-      <div className="flex flex-col w-full gap-4">
-        <button
-          onClick={async () => {
-            const res = await spotifyService.searchTracks(state.currentPath || 'English Vocabulary Builder');
-            setSegments([...res].sort(() => Math.random() - 0.5).slice(0, 4));
-            setIsCompleted(false); setSegmentIndex(0); setIsPlaying(true); setCurrentTime(0);
-          }}
-          className="w-full bg-primary text-black py-4 rounded-full font-black text-lg active:scale-95 transition-all shadow-xl"
-        >
-          CONTINUE LEARNING
-        </button>
-        <button onClick={() => { setIsCompleted(false); onClose(); }}
-          className="w-full bg-white/10 text-white py-4 rounded-full font-black text-lg"
-        >
-          BACK TO DASHBOARD
-        </button>
-      </div>
-    </div>
-  );
+  // FIX: proper time formatting
+  const formatTime = (t: number) =>
+    `${Math.floor(t / 60)}:${Math.floor(t % 60).toString().padStart(2, '0')}`;
+
+  // FIX: isCompleted check MUST come before !track check
+  // Previously: !track guard ran first → showed loader when segmentIndex went out of bounds
+  if (isCompleted) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="absolute inset-0 z-[200] bg-[#121212] overflow-y-auto"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(29,185,84,0.1)_0%,_transparent_70%)] opacity-50" />
+
+        <div className="min-h-full flex flex-col p-4 text-center relative z-10">
+          <div className="flex-1 flex flex-col justify-center">
+            <div className="mb-2">
+              <h1 className="text-xl font-black text-white leading-[0.9] tracking-tighter uppercase mb-1">
+                YOU ARE NOW <br />
+                <span className="text-[#1db954] italic text-2xl">READY.</span>
+              </h1>
+            </div>
+
+            <div className="mb-4 px-4">
+              <p className="text-white/60 text-[10px] leading-relaxed">
+                Congratulations, <span className="text-white font-bold">{state.userName || 'Learner'}</span>! You've completed your first session in <span className="text-white font-bold">Spotify Beta.</span>
+              </p>
+            </div>
+
+            {/* STATS GRID - 3 Cards side-by-side or tight stack */}
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              <div className="bg-[#1a1a1a] rounded-[12px] p-2 border border-white/5 shadow-lg flex flex-col items-center justify-center aspect-square">
+                <p className="text-[7px] font-black uppercase text-white/30 tracking-widest mb-0.5">Session</p>
+                <p className="text-[10px] font-black text-white uppercase italic leading-none">#1 DONE</p>
+              </div>
+              <div className="bg-[#1a1a1a] rounded-[12px] p-2 border border-white/5 shadow-lg flex flex-col items-center justify-center aspect-square">
+                <p className="text-[7px] font-black uppercase text-white/30 tracking-widest mb-0.5">XP Gained</p>
+                <p className="text-[10px] font-black text-[#1db954] leading-none">+500 XP</p>
+              </div>
+              <div className="bg-[#0f2414] rounded-[12px] p-2 border border-[#1db954]/20 shadow-lg flex flex-col items-center justify-center aspect-square">
+                <p className="text-[7px] font-black uppercase text-[#1db954] tracking-widest mb-0.5">Status</p>
+                <p className="text-[10px] font-black text-white uppercase italic leading-none">Ascending</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 pb-8">
+            <button
+              onClick={async () => {
+                hasAdvancedRef.current = false;
+                const res = await spotifyService.searchTracks(path);
+                setSegments([...res].sort(() => Math.random() - 0.5).slice(0, 1));
+                setIsCompleted(false);
+                setSegmentIndex(0);
+                setIsPlaying(true);
+                setCurrentTime(0);
+                updateOnboardingStep('finished');
+              }}
+              className="w-full bg-[#1db954] text-black py-4 rounded-full font-black text-base active:scale-95 transition-all shadow-[0_0_20px_rgba(29,185,84,0.3)] uppercase"
+            >
+              CONTINUE JOURNEY →
+            </button>
+
+            <button
+              onClick={() => {
+                updateOnboardingStep('finished');
+                onClose();
+              }}
+              className="text-white/60 font-black text-[11px] uppercase tracking-[0.2em] py-4 border border-white/5 rounded-full active:bg-white/5"
+            >
+              BACK TO HOME SCREEN
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   if (!track) return (
     <div className="fixed inset-0 z-[300] bg-black flex items-center justify-center">
@@ -737,7 +856,7 @@ export const MobileJourneyPlayer: React.FC<{ onClose: () => void }> = ({ onClose
       <audio
         ref={audioRef} key={track.id} src={track.previewUrl} preload="auto"
         onTimeUpdate={() => {
-          if (audioRef.current && !isCompleted) {
+          if (audioRef.current && !isCompleted && !hasAdvancedRef.current) {
             const time = audioRef.current.currentTime;
             setCurrentTime(time);
             if (time >= PLAY_LIMIT) {
@@ -746,40 +865,51 @@ export const MobileJourneyPlayer: React.FC<{ onClose: () => void }> = ({ onClose
             }
           }
         }}
-        onEnded={handleNext}
+        onEnded={() => {
+          if (!isCompleted && !hasAdvancedRef.current) {
+            handleNext();
+          }
+        }}
       />
       <div className="flex items-center justify-between p-6">
         <button onClick={onClose}><X className="w-6 h-6 text-white" /></button>
         <div className="text-center">
           <p className="text-[10px] font-black uppercase tracking-widest text-primary">Journey Level 1</p>
-          <p className="text-sm font-bold text-white uppercase">{state.currentPath}</p>
+          <p className="text-sm font-bold text-white uppercase">{path}</p>
         </div>
         <button className="opacity-0"><X className="w-6 h-6" /></button>
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-10">
-        <motion.div key={segmentIndex} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        <motion.div
+          key={segmentIndex} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
           className="w-full aspect-square max-w-[300px] mb-12 shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/10"
         >
           <img src={track.albumArt || (track as any).image} alt="" className="w-full h-full object-cover" />
         </motion.div>
+
         <div className="w-full mb-10 text-center">
           <h2 className="text-2xl font-black text-white mb-2">{track.name}</h2>
           <p className="text-lg text-[#b3b3b3] font-medium">{track.artist}</p>
         </div>
+
         <div className="w-full mb-12">
           <div className="h-1 bg-white/20 rounded-full mb-4">
             <div className="h-full bg-primary rounded-full transition-all duration-100" style={{ width: `${(currentTime / PLAY_LIMIT) * 100}%` }} />
           </div>
+          {/* FIX: proper time display */}
           <div className="flex justify-between text-[10px] font-bold text-[#b3b3b3] uppercase tracking-widest">
-            <span>0:0{Math.floor(currentTime)}</span><span>0:0{PLAY_LIMIT}</span>
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(PLAY_LIMIT)}</span>
           </div>
         </div>
+
         <div className="flex items-center justify-center gap-12">
           <button onClick={() => { setSegmentIndex(Math.max(0, segmentIndex - 1)); setCurrentTime(0); }}>
             <SkipBack className="w-10 h-10 text-white fill-current" />
           </button>
-          <button onClick={() => setIsPlaying(!isPlaying)}
+          <button
+            onClick={() => setIsPlaying(!isPlaying)}
             className="w-20 h-20 bg-white rounded-full flex items-center justify-center active:scale-95 transition-transform"
           >
             {isPlaying ? <Pause className="w-10 h-10 text-black fill-current" /> : <Play className="w-10 h-10 text-black fill-current ml-1" />}
@@ -787,12 +917,20 @@ export const MobileJourneyPlayer: React.FC<{ onClose: () => void }> = ({ onClose
           <button onClick={handleNext}><SkipForward className="w-10 h-10 text-white fill-current" /></button>
         </div>
       </div>
-      <div className="p-8 text-center">
+
+      <div className="pb-12 text-center flex flex-col items-center gap-4">
         <div className="inline-flex items-center bg-white/5 px-4 py-2 rounded-full border border-white/5">
           <span className="text-[10px] font-black text-primary uppercase tracking-widest">
             Segment {segmentIndex + 1} of {segments.length}
           </span>
         </div>
+        
+        <button 
+          onClick={onClose}
+          className="text-white/30 font-bold text-[9px] uppercase tracking-[0.2em] hover:text-white transition-colors"
+        >
+          BACK TO HOME SCREEN
+        </button>
       </div>
     </div>
   );
@@ -805,22 +943,33 @@ export const MobileLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [screen, setScreen] = useState<MobileScreen>('tabs');
   const [miniTrack, setMiniTrack] = useState<Track | null>(null);
-  const [miniPlaying, setMiniPlaying] = useState(false);
   const [miniCurrentTime, setMiniCurrentTime] = useState(0);
   const miniAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const { state, updateOnboardingStep, setGlobalPlaying } = useJourney();
+  const { trackEvent } = useTracking();
+
+  const miniPlaying = state.isGlobalPlaying;
+  const setMiniPlaying = (v: boolean) => setGlobalPlaying(v);
+
+  // CRITICAL FIX: selectCategory() calls navigate('/category/...') which kills MobileLayout.
+  // On mobile we handle journey selection ourselves — just store path via URL state trick:
+  // We use the context's selectCategory to set currentPath, then immediately navigate back.
+  // Actually simplest: we track selectedPath in local state and pass it down.
+  const [selectedPath, setSelectedPath] = useState<JourneyPath | null>(null);
+
+  const handleSelectJourney = (id: JourneyPath) => {
+    setSelectedPath(id);
+    setScreen('journey-detail');
+    trackEvent('NAV_CATEGORY', id);
+  };
 
   useEffect(() => {
     const audio = miniAudioRef.current;
     if (!audio) return;
-    if (miniPlaying) {
-      audio.play().catch(e => console.warn('Playback failed:', e));
-    } else {
-      audio.pause();
-    }
+    if (miniPlaying) audio.play().catch(e => console.warn('Playback failed:', e));
+    else audio.pause();
   }, [miniPlaying, miniTrack]);
-
-  const { state, updateOnboardingStep, selectCategory } = useJourney();
-  const { trackEvent } = useTracking();
 
   const handlePlayTrack = (track: Track | Playlist) => {
     setMiniTrack(track as Track);
@@ -843,21 +992,35 @@ export const MobileLayout: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Header passes tab-change down so drawer links work */}
+      {/* Spotlight for pointing_sidebar — highlights Journeys nav button */}
+      <AnimatePresence>
+        {state.onboardingStep === 'pointing_sidebar' && (
+          <SpotlightCoachMark
+            targetSelector="[data-tab='journeys']"
+            title="Start Your Journey 🎯"
+            subtitle="Tap Journeys to unlock goal-oriented learning paths."
+            ctaLabel="Show me"
+            onDismiss={() => {
+              setActiveTab('journeys');
+              setScreen('tabs');
+              updateOnboardingStep('pointing_start');
+            }}
+            tooltipPosition="top"
+          />
+        )}
+      </AnimatePresence>
+
       <MobileHeader onTabChange={(tab) => { setActiveTab(tab); setScreen('tabs'); }} />
 
       {import.meta.env.DEV && (
         <button
-          onClick={() => {
-            localStorage.clear();
-            sessionStorage.clear();
-            window.location.reload();
-          }}
+          onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.reload(); }}
           className="fixed bottom-32 right-4 z-[999] bg-red-500 text-white text-[10px] font-black px-3 py-2 rounded-full shadow-xl uppercase tracking-widest"
         >
           🔄 Reset
         </button>
       )}
+
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {!state.userName && screen === 'tabs' && (
           <div className="absolute inset-0 z-[110] bg-black p-6 flex items-center justify-center">
@@ -869,11 +1032,26 @@ export const MobileLayout: React.FC = () => {
         {activeTab === 'search' && <SearchTab />}
         {activeTab === 'library' && <LibraryTab />}
         {activeTab === 'journeys' && (
-          <JourneysTab onSelectJourney={(id) => { selectCategory(id); setScreen('journey-detail'); }} />
+          <JourneysTab onSelectJourney={handleSelectJourney} />
         )}
 
         <AnimatePresence>
-          {screen === 'journey-detail' && <JourneyDetailScreen onBack={() => setScreen('tabs')} />}
+          {screen === 'journey-detail' && (
+            <JourneyDetailScreen
+              path={selectedPath || 'English Vocabulary Builder' as JourneyPath}
+              onBack={() => setScreen('tabs')}
+              onStartJourney={() => setScreen('journey-player')}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {screen === 'journey-player' && (
+            <MobileJourneyPlayer
+              path={selectedPath || 'English Vocabulary Builder' as JourneyPath}
+              onClose={() => { setScreen('tabs'); setActiveTab('home'); }}
+            />
+          )}
         </AnimatePresence>
 
         <AnimatePresence>
@@ -895,9 +1073,7 @@ export const MobileLayout: React.FC = () => {
           ref={miniAudioRef}
           key={miniTrack?.id}
           src={miniTrack?.previewUrl}
-          onTimeUpdate={() => {
-            if (miniAudioRef.current) setMiniCurrentTime(miniAudioRef.current.currentTime);
-          }}
+          onTimeUpdate={() => { if (miniAudioRef.current) setMiniCurrentTime(miniAudioRef.current.currentTime); }}
           onEnded={() => setMiniPlaying(false)}
         />
         <MiniPlayer
@@ -911,27 +1087,26 @@ export const MobileLayout: React.FC = () => {
         <nav className="flex items-center justify-around bg-black/95 backdrop-blur-xl border-t border-white/5 h-[72px] pb-[env(safe-area-inset-bottom,12px)]">
           {tabs.map(({ id, label, icon: Icon }) => {
             const active = activeTab === id;
-            const isPointing = state.onboardingStep === 'pointing_sidebar' && id === 'journeys';
             return (
               <button
                 key={id}
-                onClick={() => { setActiveTab(id); setScreen('tabs'); trackEvent('MOBILE_TAB_SWITCH', id); }}
-                className={`flex flex-col items-center justify-center gap-1 flex-1 h-full active:opacity-70 transition-all relative ${isPointing ? 'scale-110' : ''}`}
+                data-tab={id}
+                onClick={() => {
+                  setActiveTab(id);
+                  setScreen('tabs');
+                  trackEvent('MOBILE_TAB_SWITCH', id);
+                  // FIX: advance onboarding when Journeys is tapped during pointing_sidebar
+                  if (id === 'journeys' && state.onboardingStep === 'pointing_sidebar') {
+                    updateOnboardingStep('pointing_start');
+                  }
+                }}
+                className="flex flex-col items-center justify-center gap-1 flex-1 h-full active:opacity-70 transition-all relative"
               >
-                {isPointing && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    className="absolute -top-10 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
-                  >
-                    <div className="bg-primary text-black px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-tighter shadow-2xl whitespace-nowrap">
-                      Start Journey! 👈
-                    </div>
-                  </motion.div>
-                )}
                 <Icon
-                  className={`w-[24px] h-[24px] transition-colors ${active ? 'text-white' : 'text-[#b3b3b3]'} ${isPointing ? 'text-primary animate-pulse' : ''}`}
+                  className={`w-[24px] h-[24px] transition-colors ${active ? 'text-white' : 'text-[#b3b3b3]'}`}
                   strokeWidth={active ? 2.5 : 2}
                 />
-                <span className={`text-[10px] font-bold tracking-tight transition-colors ${active ? 'text-white' : 'text-[#b3b3b3]'} ${isPointing ? 'text-primary' : ''}`}>
+                <span className={`text-[10px] font-bold tracking-tight transition-colors ${active ? 'text-white' : 'text-[#b3b3b3]'}`}>
                   {label}
                 </span>
               </button>

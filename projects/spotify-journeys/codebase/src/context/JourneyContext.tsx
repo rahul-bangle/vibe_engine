@@ -146,13 +146,13 @@ export const JourneyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const resetJourney = () => {
         trackEvent('NAV_RESET', 'home');
-        setState(prev => ({ ...prev, isCompleted: false, activeFilter: 'All' }));
+        setState(prev => ({ ...prev, isCompleted: false, activeFilter: 'All', onboardingStep: 'finished' }));
         navigate('/');
     };
 
     const continueLearning = () => {
         trackEvent('NAV_CONTINUE', 'journeys');
-        setState(prev => ({ ...prev, isCompleted: false }));
+        setState(prev => ({ ...prev, isCompleted: false, onboardingStep: 'finished' }));
         // No navigation here - we want to stay in the player and continue
     };
 
@@ -258,12 +258,18 @@ export const JourneyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setInteractionCount(prev => prev + 1);
         if (state.profileId) {
             try {
+                // Include user name in metadata for easier debugging/visibility in logs
+                const richMetadata = { 
+                    ...metadata, 
+                    user_name: state.userName || 'Unknown' 
+                };
+
                 await supabase.from('activity_logs').insert({
                     profile_id: state.profileId,
                     event_type: eventType,
                     element_id: elementId,
                     page_path: window.location.pathname,
-                    metadata
+                    metadata: richMetadata
                 });
             } catch (err) {
                 console.warn('Tracking failed:', err);
