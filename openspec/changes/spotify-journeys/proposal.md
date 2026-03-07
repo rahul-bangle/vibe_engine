@@ -13,13 +13,13 @@ We are introducing a new "Journeys" feature to the Spotify Web Player. This incl
 
 ## Capabilities
 
-### New Capabilities
+## New Capabilities
 - `journey-onboarding`: Selection interface for learning goals (e.g., "Improve English", "Focus Training").
 - `journey-player`: A specialized playlist view that handles the structured mix of music and podcasts.
 - `journey-tracker`: A data layer and UI component for monitoring user progress, streaks, and completion.
 - `journey-nudges`: UI triggers for motivational messages and behavioral reminders.
 
-### Modified Capabilities
+## Modified Capabilities
 - `sidebar-navigation`: Addition of the "Journeys" link to the existing navigation system.
 
 ## Impact
