@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, X, ChevronDown, Shuffle, Repeat, Star } from 'lucide-react';
 import { useJourney } from '../hooks/useJourney';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,13 +8,11 @@ import { useParams } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
 export const JourneyPlayer: React.FC = () => {
-    const PLAY_LIMIT = 8;
     const { id } = useParams<{ id: string }>();
     const { state, resetJourney, completeDay, addToRecentlyPlayed, setGlobalPlaying, updateOnboardingStep, continueLearning } = useJourney();
     const journeyTitle = id ? decodeURIComponent(id) : state.currentPath || 'Focus';
 
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [hasStarted, setHasStarted] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(true);
     const [currentTime, setCurrentTime] = useState(0);
     const [volume, setVolume] = useState(0.7);
     const [isMuted, setIsMuted] = useState(false);
@@ -22,9 +20,9 @@ export const JourneyPlayer: React.FC = () => {
     const [segments, setSegments] = useState<Track[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCompleted, setIsCompleted] = useState(false);
-    const [dominantColor, setDominantColor] = useState('#1a1a2e');
-
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const PLAY_LIMIT = 8;
+    const [dominantColor, setDominantColor] = useState('#1a1a2e');
 
     // Stop global playback
     useEffect(() => {
@@ -78,11 +76,11 @@ export const JourneyPlayer: React.FC = () => {
         const audio = audioRef.current;
         if (!audio) return;
         if (isPlaying) {
-            audio.play().catch(() => {});
+            audio.play().catch(e => console.warn("Player play error:", e));
         } else {
             audio.pause();
         }
-    }, [isPlaying, segmentIndex]);
+    }, [isPlaying, segmentIndex, segments]);
 
     useEffect(() => {
         if (audioRef.current) {
@@ -119,11 +117,11 @@ export const JourneyPlayer: React.FC = () => {
     // Auto-dismiss onboarding HUD
 
     const handleTimeUpdate = () => {
-        if (audioRef.current) {
+        if (audioRef.current && !isCompleted) {
             const current = audioRef.current.currentTime;
             setCurrentTime(current);
             if (current >= PLAY_LIMIT) {
-                audioRef.current.currentTime = 0;
+                audioRef.current.pause();
                 handleEnded();
             }
         }
@@ -139,12 +137,16 @@ export const JourneyPlayer: React.FC = () => {
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 9999 });
     };
 
+    const handleComplete = () => {
+        triggerCompletion();
+    };
+
     const handleEnded = () => {
-        // Streamlined: Complete after the first segment is done
-        if (segmentIndex === 0) {
-            triggerCompletion();
-        } else if (segmentIndex < segments.length - 1) {
+        if (isCompleted) return;
+        if (segmentIndex < segments.length - 1) {
             setSegmentIndex(prev => prev + 1);
+            setCurrentTime(0);
+            setIsPlaying(true);
         } else {
             triggerCompletion();
         }
@@ -159,10 +161,11 @@ export const JourneyPlayer: React.FC = () => {
     };
 
     const handleNext = () => {
-        if (segmentIndex === 0) {
-            triggerCompletion();
-        } else if (segmentIndex < segments.length - 1) {
-            setSegmentIndex(p => p + 1);
+        if (segmentIndex < segments.length - 1) {
+            setSegmentIndex(v => v + 1);
+            setCurrentTime(0);
+        } else {
+            handleComplete();
         }
     };
 
@@ -263,10 +266,15 @@ export const JourneyPlayer: React.FC = () => {
 
             <audio
                 ref={audioRef}
+                key={currentSegment.id}
                 src={currentSegment.previewUrl}
+                preload="auto"
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={handleEnded}
-                onError={handleNext}
+                onError={(e) => {
+                    console.warn("Playback error skipping track:", e);
+                    handleNext();
+                }}
             />
 
             {/* ── Top Bar ── */}
@@ -348,7 +356,6 @@ export const JourneyPlayer: React.FC = () => {
 
                         <button
                             onClick={() => {
-                                if (!hasStarted) setHasStarted(true);
                                 setIsPlaying(!isPlaying);
                             }}
                             className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg"

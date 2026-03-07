@@ -99,8 +99,8 @@ export const WelcomeBanner: React.FC = () => {
                     <h1 className="text-5xl sm:text-7xl font-black mb-6 tracking-tighter text-white leading-[0.9]">
                         Spotify <span className="text-primary italic">Journeys</span>
                     </h1>
-                    <p className="text-text-subdued text-lg sm:text-xl mb-12 font-medium max-w-sm mx-auto leading-relaxed">
-                        Master your professional skills while you listen. An autonomous evolution by <span className="text-white">Spotify Beta.</span>
+                    <p className="text-white/60 text-lg mb-8 max-w-md mx-auto leading-relaxed">
+                        Hey! We've added a new feature that helps you <span className="text-primary font-bold">listen and learn</span> at the same time. Experience music like never before.
                     </p>
 
                     <form onSubmit={handleSubmit} className="relative group max-w-sm mx-auto">

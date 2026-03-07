@@ -35,7 +35,7 @@ export const OnboardingPopUp: React.FC<OnboardingPopUpProps> = ({ onClose }) => 
                 </h3>
                 
                 <p className="text-text-subdued text-lg font-medium mb-10 leading-relaxed max-w-sm">
-                    Unlock <span className="text-white font-bold">Goal-Oriented Journeys</span>. Master vocabulary and soft skills while vibing to your favorite tracks.
+                    Hey, we've added a new feature that helps you <span className="text-white font-bold">listen and learn</span> at the same time! Master vocabulary while vibing to your favorite tracks.
                 </p>
 
                 <button 

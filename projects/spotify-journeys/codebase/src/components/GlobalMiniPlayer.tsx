@@ -68,7 +68,9 @@ export const GlobalMiniPlayer: React.FC = () => {
                 <div className="bg-[#0f0f0f]/95 backdrop-blur-xl rounded-2xl p-4 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden group">
                     <audio
                         ref={audioRef}
+                        key={track.id}
                         src={track.previewUrl}
+                        preload="auto"
                         onTimeUpdate={handleTimeUpdate}
                         onEnded={handleEnded}
                     />
