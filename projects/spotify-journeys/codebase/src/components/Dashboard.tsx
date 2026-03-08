@@ -400,6 +400,7 @@ export const Dashboard: React.FC = () => {
                         </>
                         )}
 
+                        {activeFilter !== 'Journeys' && (
                         <section className="space-y-6">
                             <h2 className="text-2xl font-black tracking-tight">Good morning, {state.userName?.split(' ')[0] || 'Member'}</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -440,6 +441,7 @@ export const Dashboard: React.FC = () => {
                                 )}
                             </div>
                         </section>
+                        )}
 
                         <div className="space-y-8">
                             {activeFilter === 'Music' && musicSections.map(s => renderCardRow(s.title, s.items))}
