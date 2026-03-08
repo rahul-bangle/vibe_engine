@@ -11,10 +11,10 @@ import { WelcomeBanner } from './components/WelcomeBanner';
 import { ReviewModal } from './components/ReviewModal';
 import { useTracking } from './hooks/useTracking';
 import { useJourney } from './hooks/useJourney';
-import { MobileLayout, MobileJourneyPlayer } from './components/MobileLayout';
+import { MobileLayout } from './components/MobileLayout';
 
 function AppContent() {
-  const { state, nudgeMessage, clearNudge, resetJourney } = useJourney();
+  const { state, nudgeMessage, clearNudge } = useJourney();
   const { interactionCount } = useTracking();
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [hasTriggeredReview, setHasTriggeredReview] = useState(() => {
