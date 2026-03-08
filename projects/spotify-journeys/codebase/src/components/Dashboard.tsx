@@ -76,26 +76,68 @@ export const Dashboard: React.FC = () => {
                         }))
                     })));
                 } else if (activeFilter === 'All') {
-                    const favoritesResult = await spotifyService.searchTracks("india top hits");
-                    setAllSections([
-                        { title: "Trending Now", items: featuredPlaykits.map(p => ({ ...p, image: p.image || "/album-placeholder.png" })) },
-                        { title: "Your Favorites", items: favoritesResult.map(t => ({ id: t.id, name: t.name, description: t.artist, image: t.albumArt, previewUrl: t.previewUrl })) }
+                    // TRENDING NOW — fetch directly, don't rely on featuredPlaykits
+                    const [trendingResult, favoritesResult] = await Promise.all([
+                        spotifyService.searchTracks('Bollywood Hits 2024'),
+                        spotifyService.searchTracks('india top hits'),
                     ]);
 
+                    setAllSections([
+                        {
+                            title: "Trending Now",
+                            items: trendingResult.map(t => ({
+                                id: t.id,
+                                name: t.name,
+                                description: t.artist,
+                                image: t.albumArt,
+                                previewUrl: t.previewUrl
+                            }))
+                        },
+                        {
+                            title: "Your Favorites",
+                            items: favoritesResult.map(t => ({
+                                id: t.id,
+                                name: t.name,
+                                description: t.artist,
+                                image: t.albumArt,
+                                previewUrl: t.previewUrl
+                            }))
+                        }
+                    ]);
+
+                    // JUMP BACK IN — deduplicated across 6 artist queries
                     if (state.recentlyPlayed && state.recentlyPlayed.length > 0) {
                         const recent = await spotifyService.getTracksByIds(state.recentlyPlayed.slice(0, 6));
-                        setRecentTracks(recent.map(t => ({ id: t.id, name: t.name, image: t.albumArt, previewUrl: t.previewUrl, artist: t.artist })));
+                        setRecentTracks(recent.map(t => ({
+                            id: t.id, name: t.name,
+                            image: t.albumArt, previewUrl: t.previewUrl, artist: t.artist
+                        })));
                     } else {
-                        // Guaranteed diverse fallback for Desktop as well
-                        const queries = ['Blinding Lights', 'Lofi Girl', 'Arijit Singh Hits', 'Die For You', 'Global Top 50', 'Phonk Remix'];
-                        const multiResults = await Promise.all(queries.map(q => spotifyService.searchTracks(q)));
-                        
-                        const combined = multiResults
-                            .map(results => results[0])
-                            .filter(Boolean)
-                            .map(t => ({ id: t.id, name: t.name, image: t.albumArt, previewUrl: t.previewUrl, artist: t.artist }));
-                            
-                        setRecentTracks(combined.slice(0, 6));
+                        const jumpQueries = [
+                            'Arijit Singh',
+                            'AP Dhillon',
+                            'Shreya Ghoshal',
+                            'Sidhu Moosewala',
+                            'Diljit Dosanjh',
+                            'AR Rahman',
+                        ];
+                        const jumpResults = await Promise.all(
+                            jumpQueries.map(q => spotifyService.searchTracks(q))
+                        );
+                        const seen = new Set<string>();
+                        const unique = jumpResults
+                            .map(results => results.find(r => {
+                                const key = r.name.toLowerCase().trim();
+                                if (seen.has(key)) return false;
+                                seen.add(key);
+                                return true;
+                            }))
+                            .filter(Boolean) as any[];
+
+                        setRecentTracks(unique.slice(0, 6).map(t => ({
+                            id: t.id, name: t.name,
+                            image: t.albumArt, previewUrl: t.previewUrl, artist: t.artist
+                        })));
                     }
                 } else if (activeFilter === 'Artists') {
                     const artists = await spotifyService.searchArtists("top artists 2024");
@@ -363,7 +405,13 @@ export const Dashboard: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                 <div className="md:col-span-2 space-y-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {recentTracks.map((item, i) => (
+                                        {recentTracks.length === 0 ? (
+                                            // Show skeleton placeholders while loading
+                                            [...Array(6)].map((_, i) => (
+                                                <div key={i} className="h-20 bg-white/5 rounded-xl animate-pulse" />
+                                            ))
+                                        ) : (
+                                        recentTracks.map((item, i) => (
                                             <div key={i} className="flex items-center bg-white/5 hover:bg-white/10 transition-all rounded-xl overflow-hidden group cursor-pointer border border-white/5 h-20">
                                                 <div className="w-20 h-20 relative flex-shrink-0">
                                                     <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
@@ -382,7 +430,7 @@ export const Dashboard: React.FC = () => {
                                                     <div className="text-sm text-text-subdued truncate">{item.artist}</div>
                                                 </div>
                                             </div>
-                                        ))}
+                                        )))}
                                     </div>
                                 </div>
                                 {activeFilter === 'All' && (
