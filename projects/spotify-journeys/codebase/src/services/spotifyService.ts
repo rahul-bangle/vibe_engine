@@ -104,13 +104,22 @@ interface JioSaavnSearchResults<T> {
 class SpotifyService {
     private JIOSAAVN_BASE_URL = 'https://saavn.sumit.co/api';
 
+    private decodeHtml(str: string): string {
+        return str
+            .replace(/&quot;/g, '"')
+            .replace(/&amp;/g, '&')
+            .replace(/&#039;/g, "'")
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>');
+    }
+
     private mapTrack(item: JioSaavnTrack): Track {
         const image = item.image?.find(img => img.quality === '500x500')?.url || item.image?.[item.image.length - 1]?.url || '';
         const download = item.downloadUrl?.find(d => d.quality === '320kbps')?.url || item.downloadUrl?.[item.downloadUrl.length - 1]?.url || '';
 
         return {
             id: item.id,
-            name: item.name,
+            name: this.decodeHtml(item.name),
             artist: item.artists?.primary?.[0]?.name || 'Unknown Artist',
             albumArt: image,
             duration: item.duration || 0,
