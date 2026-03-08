@@ -335,14 +335,18 @@ export const Dashboard: React.FC = () => {
                                 )}
                                 <section className="relative w-full h-[200px] md:h-[260px] rounded-3xl overflow-hidden group shadow-2xl transition-all duration-700 hover:shadow-primary/10">
                                 {activeFilter === 'Journeys' ? (
-                                    <div className="relative h-full flex flex-col md:flex-row items-center p-5 md:p-10 lg:p-14 gap-8">
+                                    <div className="relative w-full h-full">
                                         <div className="absolute inset-0 bg-gradient-to-br from-[#0c0c0c] via-[#1a1a1a] to-[#2d1e4e]" />
-                                        <div className="relative h-full flex flex-col md:flex-row items-center gap-8 z-10">
-                                            <div className="flex-1 space-y-6">
-                                                <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9]">
-                                                    LANGUAGE <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-400">SPOTIFY BETA.</span>
+                                        <div className="relative z-10 h-full flex flex-row items-center justify-between px-10 gap-6">
+                                            {/* LEFT — text + button */}
+                                            <div className="flex flex-col justify-center gap-4 flex-1 min-w-0">
+                                                <h1 className="text-4xl lg:text-6xl font-black text-white tracking-tighter leading-[0.9]">
+                                                    LANGUAGE <br/>
+                                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-400">
+                                                        SPOTIFY BETA.
+                                                    </span>
                                                 </h1>
-                                                <p className="text-sm text-white/60 max-w-md font-medium">
+                                                <p className="text-sm text-white/60 max-w-xs font-medium leading-relaxed">
                                                     Master 500+ high-frequency English words and improve your professional communication skills.
                                                 </p>
                                                 <button
@@ -352,17 +356,18 @@ export const Dashboard: React.FC = () => {
                                                         }
                                                         selectCategory("English Vocabulary Builder");
                                                     }}
-                                                    className={`bg-primary text-black px-8 py-3 rounded-full font-black text-xs md:text-sm flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-xl ${state.onboardingStep === 'pointing_start' ? 'ring-4 ring-primary animate-pulse shadow-[0_0_20px_rgba(29,185,84,0.6)]' : ''}`}
+                                                    className={`w-fit bg-primary text-black px-8 py-3 rounded-full font-black text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl ${state.onboardingStep === 'pointing_start' ? 'ring-4 ring-primary animate-pulse shadow-[0_0_20px_rgba(29,185,84,0.6)]' : ''}`}
                                                 >
-                                                    <Play size={20} fill="black" />
+                                                    <Play size={18} fill="black" />
                                                     <span>{state.onboardingStep === 'pointing_start' ? 'START FIRST JOURNEY' : 'RESUME LEARNING'}</span>
                                                 </button>
                                             </div>
-                                            <div className="hidden xl:block">
+                                            {/* RIGHT — image pinned to right edge */}
+                                            <div className="flex-shrink-0">
                                                 <img
                                                     src="/language_mastery_hero.png"
                                                     alt="hero"
-                                                    className="w-56 h-56 lg:w-64 lg:h-64 object-cover rounded-3xl shadow-2xl border border-white/10"
+                                                    className="w-48 h-48 lg:w-56 lg:h-56 object-cover rounded-3xl shadow-2xl border border-white/10"
                                                 />
                                             </div>
                                         </div>
