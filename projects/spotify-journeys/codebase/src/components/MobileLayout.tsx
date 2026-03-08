@@ -375,36 +375,57 @@ const HomeTab: React.FC<{ onPlayTrack: (track: Track | Playlist) => void }> = ({
   }, [state.userName, state.onboardingStep, updateOnboardingStep]);
 
   useEffect(() => {
-    const fetch = async () => {
+    const loadHomeData = async () => {
       setIsLoading(true);
       try {
+        // JUMP BACK IN — 6 unique tracks from 6 real JioSaavn-friendly queries
         if (state.recentlyPlayed?.length > 0) {
           const t = await spotifyService.getTracksByIds(state.recentlyPlayed.slice(0, 6));
-          setRecentTracks(t.length > 0 ? t : (await spotifyService.searchTracks('Top Learning')).slice(0, 6));
+          setRecentTracks(t.length > 0 ? t : (await spotifyService.searchTracks('Arijit Singh')).slice(0, 6));
         } else {
-          // Fetch a broader set and deduplicate by name to avoid repeat cards
-          const allResults = await spotifyService.searchTracks('Top Hits Mix');
-
-          // Deduplicate by track name — removes all "Deep Focus x6" clones
+          const jumpQueries = [
+            'Arijit Singh',
+            'AP Dhillon',
+            'Shreya Ghoshal',
+            'Sidhu Moosewala',
+            'Diljit Dosanjh',
+            'AR Rahman',
+          ];
+          const jumpResults = await Promise.all(
+            jumpQueries.map(q => spotifyService.searchTracks(q))
+          );
+          // Pick best unique result from each query
           const seen = new Set<string>();
-          const unique = allResults.filter((item: any) => {
-            const key = (item.name || item.title || '').toLowerCase().trim();
-            if (!key || seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-
-          setTrending((await spotifyService.searchTracks('Daily Highlights')).slice(0, 10));
-          setPodcasts((await spotifyService.getPodcasts('Educational Knowledge')).slice(0, 10));
-          setMadeForYou((await spotifyService.searchTracks('Learning Path')).slice(0, 10));
+          const unique = jumpResults
+            .map(results => results.find(r => {
+              const key = r.name.toLowerCase().trim();
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            }))
+            .filter(Boolean) as Track[];
+          setRecentTracks(unique.slice(0, 6));
         }
+
+        // YOUR TOP MIXES — trending Bollywood works great on JioSaavn
+        const trendingResults = await spotifyService.searchTracks('Bollywood Hits 2024');
+        setTrending(trendingResults.slice(0, 10));
+
+        // SUGGESTED FOR YOU — podcasts/educational
+        const podcastResults = await spotifyService.getPodcasts('English Learning');
+        setPodcasts(podcastResults.slice(0, 10));
+
+        // BASED ON RECENT LISTENING
+        const madeResults = await spotifyService.searchTracks('Chill Vibes Hindi');
+        setMadeForYou(madeResults.slice(0, 10));
+
       } catch (e) {
         console.warn(e);
       } finally {
         setIsLoading(false);
       }
     };
-    fetch();
+    loadHomeData();
   }, [state.recentlyPlayed]);
 
   const getGreeting = () => {
