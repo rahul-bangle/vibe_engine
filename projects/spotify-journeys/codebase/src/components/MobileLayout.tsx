@@ -382,13 +382,27 @@ const HomeTab: React.FC<{ onPlayTrack: (track: Track | Playlist) => void }> = ({
           const t = await spotifyService.getTracksByIds(state.recentlyPlayed.slice(0, 6));
           setRecentTracks(t.length > 0 ? t : (await spotifyService.searchTracks('Top Learning')).slice(0, 6));
         } else {
-          setRecentTracks((await spotifyService.searchTracks('Deep Focus')).slice(0, 6));
+          // Fetch a broader set and deduplicate by name to avoid repeat cards
+          const allResults = await spotifyService.searchTracks('Top Hits Mix');
+
+          // Deduplicate by track name — removes all "Deep Focus x6" clones
+          const seen = new Set<string>();
+          const unique = allResults.filter((item: any) => {
+            const key = (item.name || item.title || '').toLowerCase().trim();
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
+          setTrending((await spotifyService.searchTracks('Daily Highlights')).slice(0, 10));
+          setPodcasts((await spotifyService.getPodcasts('Educational Knowledge')).slice(0, 10));
+          setMadeForYou((await spotifyService.searchTracks('Learning Path')).slice(0, 10));
         }
-        setTrending((await spotifyService.searchTracks('Daily Highlights')).slice(0, 10));
-        setPodcasts((await spotifyService.getPodcasts('Educational Knowledge')).slice(0, 10));
-        setMadeForYou((await spotifyService.searchTracks('Learning Path')).slice(0, 10));
-      } catch (e) { console.warn(e); }
-      finally { setIsLoading(false); }
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetch();
   }, [state.recentlyPlayed]);
@@ -1056,14 +1070,7 @@ export const MobileLayout: React.FC = () => {
 
       <MobileHeader onTabChange={(tab) => { setActiveTab(tab); setScreen('tabs'); }} />
 
-      {import.meta.env.DEV && (
-        <button
-          onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.reload(); }}
-          className="fixed bottom-32 right-4 z-[999] bg-red-500 text-white text-[10px] font-black px-3 py-2 rounded-full shadow-xl uppercase tracking-widest"
-        >
-          🔄 Reset
-        </button>
-      )}
+
 
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {!state.userName && screen === 'tabs' && (

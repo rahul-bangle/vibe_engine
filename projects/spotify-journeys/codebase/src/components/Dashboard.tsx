@@ -14,7 +14,7 @@ import { OnboardingPopUp } from './OnboardingPopUp';
 
 export const Dashboard: React.FC = () => {
     const { featuredPlaykits, categories } = useSpotify();
-    const { state, selectCategory, setActiveFilter, playTrack, updateOnboardingStep, resetState } = useJourney();
+    const { state, selectCategory, setActiveFilter, playTrack, updateOnboardingStep } = useJourney();
     const { trackEvent } = useTracking();
     const [podcastSections, setPodcastSections] = useState<{ title: string; items: any[] }[]>([]);
     const [musicSections, setMusicSections] = useState<{ title: string; items: any[] }[]>([]);
@@ -85,6 +85,17 @@ export const Dashboard: React.FC = () => {
                     if (state.recentlyPlayed && state.recentlyPlayed.length > 0) {
                         const recent = await spotifyService.getTracksByIds(state.recentlyPlayed.slice(0, 6));
                         setRecentTracks(recent.map(t => ({ id: t.id, name: t.name, image: t.albumArt, previewUrl: t.previewUrl, artist: t.artist })));
+                    } else {
+                        // Guaranteed diverse fallback for Desktop as well
+                        const queries = ['Blinding Lights', 'Lofi Girl', 'Arijit Singh Hits', 'Die For You', 'Global Top 50', 'Phonk Remix'];
+                        const multiResults = await Promise.all(queries.map(q => spotifyService.searchTracks(q)));
+                        
+                        const combined = multiResults
+                            .map(results => results[0])
+                            .filter(Boolean)
+                            .map(t => ({ id: t.id, name: t.name, image: t.albumArt, previewUrl: t.previewUrl, artist: t.artist }));
+                            
+                        setRecentTracks(combined.slice(0, 6));
                     }
                 } else if (activeFilter === 'Artists') {
                     const artists = await spotifyService.searchArtists("top artists 2024");
@@ -232,12 +243,7 @@ export const Dashboard: React.FC = () => {
                         <button className="bg-black/40 p-1.5 rounded-full"><ChevronLeft className="w-5 h-5" /></button>
                         <button className="bg-black/40 p-1.5 rounded-full opacity-50"><ChevronRight className="w-5 h-5" /></button>
                     </div>
-                    <button 
-                        onClick={resetState}
-                        className="text-[10px] font-black text-primary/40 hover:text-primary uppercase tracking-[0.2em] transition-colors border border-primary/20 hover:border-primary/40 px-3 py-1.5 rounded-full"
-                    >
-                        Refresh Experience
-                    </button>
+
                 </div>
 
                 <div className="flex items-center gap-6 overflow-hidden ml-4">
