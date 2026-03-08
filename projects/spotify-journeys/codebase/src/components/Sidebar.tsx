@@ -68,6 +68,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                         <SidebarItem
                             icon={Search}
                             label="Search"
+                            onClick={() => {
+                                setActiveFilter('All');
+                                trackEvent('NAV_SEARCH', 'sidebar');
+                            }}
                         />
                     </div>
                 </nav>

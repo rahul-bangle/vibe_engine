@@ -139,7 +139,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose }) => 
 
                                 {step === 2 && (
                                     <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-                                        <p className="text-white/60 mb-6">Did the music matches your goal?</p>
+                                        <p className="text-white/60 mb-6">Did the music match your goal?</p>
                                         <div className="flex gap-4 mb-8">
                                             <button
                                                 onClick={() => setContentMatch(true)}

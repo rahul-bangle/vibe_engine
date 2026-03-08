@@ -52,7 +52,6 @@ function AppContent() {
       <>
         <WelcomeBanner />
         <MobileLayout />
-        {state.step === 2 && <MobileJourneyPlayer onClose={resetJourney} />}
 
         <ReviewModal
           isOpen={showReviewModal}

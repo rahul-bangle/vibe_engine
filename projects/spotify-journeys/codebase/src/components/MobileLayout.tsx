@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Home, Search, Library, Compass, X, Play, Pause, Heart,
+  Home, Search, Library, Compass as JourneyIcon, X, Play, Pause, Heart,
   MoreHorizontal, ChevronLeft, ChevronRight, SkipBack, SkipForward, Shuffle,
   Repeat, ChevronDown, MoreVertical, MonitorSpeaker, ListMusic,
-  Bell, Clock, Settings
+  Bell, Clock, Settings, Volume2
 } from 'lucide-react';
 import { useJourney } from '../hooks/useJourney';
 import { useTracking } from '../hooks/useTracking';
@@ -118,7 +118,7 @@ const MobileHeader: React.FC<{ onTabChange: (tab: Tab) => void }> = ({ onTabChan
     { icon: Home, label: 'Home', tab: 'home' as Tab },
     { icon: Search, label: 'Search', tab: 'search' as Tab },
     { icon: Library, label: 'Your Library', tab: 'library' as Tab },
-    { icon: Compass, label: 'Journeys', tab: 'journeys' as Tab },
+    { icon: JourneyIcon, label: 'Journeys', tab: 'journeys' as Tab },
   ];
 
   return (
@@ -234,7 +234,7 @@ const MiniPlayer: React.FC<{
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-black text-white truncate leading-tight mb-0.5">{track.name}</p>
         <p className="text-[11px] font-medium text-[#b3b3b3] truncate flex items-center gap-1.5">
-          <MonitorSpeaker className="w-3 h-3 text-primary fill-current" />
+          <JourneyIcon className="w-8 h-8 text-primary/40 animate-pulse" />
           {track.artist || (track as any).description}
         </p>
       </div>
@@ -335,7 +335,7 @@ const NowPlayingScreen: React.FC<{
 
         <div className="flex items-center gap-4 mb-8">
           <Volume2 className="w-5 h-5 text-[#b3b3b3]" />
-          <div 
+          <div
             className="flex-1 h-1 bg-white/20 rounded-full relative"
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
@@ -931,7 +931,7 @@ export const MobileJourneyPlayer: React.FC<{ path: JourneyPath; onClose: () => v
         {/* Volume - Mobile Player */}
         <div className="w-full max-w-[200px] flex items-center gap-4 mb-10">
           <Volume2 className="w-4 h-4 text-white/40" />
-          <div 
+          <div
             className="flex-1 h-1 bg-white/10 rounded-full relative"
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
@@ -963,8 +963,8 @@ export const MobileJourneyPlayer: React.FC<{ path: JourneyPath; onClose: () => v
             Segment {segmentIndex + 1} of {segments.length}
           </span>
         </div>
-        
-        <button 
+
+        <button
           onClick={onClose}
           className="text-white/30 font-bold text-[9px] uppercase tracking-[0.2em] hover:text-white transition-colors"
         >
@@ -1025,7 +1025,7 @@ export const MobileLayout: React.FC = () => {
     { id: 'home' as Tab, label: 'Home', icon: Home },
     { id: 'search' as Tab, label: 'Search', icon: Search },
     { id: 'library' as Tab, label: 'Your Library', icon: Library },
-    { id: 'journeys' as Tab, label: 'Journeys', icon: Compass },
+    { id: 'journeys' as Tab, label: 'Journeys', icon: JourneyIcon },
   ];
 
   return (
@@ -1106,7 +1106,7 @@ export const MobileLayout: React.FC = () => {
               miniCurrentTime={miniCurrentTime}
               volume={miniVolume}
               onVolumeChange={setMiniVolume}
-              onPlayPause={() => setMiniPlaying(p => !p)}
+              onPlayPause={() => setMiniPlaying(!miniPlaying)}
               onClose={() => setScreen('tabs')}
               onSkipNext={() => {
                 // Just a placeholder for next trending track
@@ -1133,7 +1133,7 @@ export const MobileLayout: React.FC = () => {
           track={miniTrack}
           isPlaying={miniPlaying}
           currentTime={miniCurrentTime}
-          onPlayPause={() => setMiniPlaying(p => !p)}
+          onPlayPause={() => setMiniPlaying(!miniPlaying)}
           onOpen={() => setScreen('now-playing')}
         />
 

@@ -54,7 +54,7 @@ export const JourneyPlayer: React.FC = () => {
                     duration: 30
                 }]);
             } else {
-                const sequence = educationalTracks.slice(0, 4).map((t, i) => ({
+                const sequence = educationalTracks.slice(0, 1).map((t, i) => ({
                     ...t,
                     name: `Module ${i + 1}: ${t.name}`,
                     artist: i === 0 ? 'Introduction' : t.artist
@@ -114,10 +114,15 @@ export const JourneyPlayer: React.FC = () => {
         }
     }, [state.isCompleted, isCompleted, segmentIndex, segments.length]);
 
-    // Auto-dismiss onboarding HUD
+    const hasAdvancedRef = useRef(false);
+
+    useEffect(() => {
+        hasAdvancedRef.current = false;
+        setCurrentTime(0);
+    }, [segmentIndex]);
 
     const handleTimeUpdate = () => {
-        if (audioRef.current && !isCompleted) {
+        if (audioRef.current && !isCompleted && !hasAdvancedRef.current) {
             const current = audioRef.current.currentTime;
             setCurrentTime(current);
             if (current >= PLAY_LIMIT) {
@@ -134,7 +139,27 @@ export const JourneyPlayer: React.FC = () => {
         if (state.onboardingStep !== 'completed' && state.onboardingStep !== null) {
             updateOnboardingStep('completed');
         }
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 9999 });
+        confetti({ 
+            particleCount: 150, 
+            spread: 70, 
+            origin: { y: 0.6 }, 
+            zIndex: 10001,
+            colors: ['#1DB954', '#ffffff', '#191414']
+        });
+        setTimeout(() => {
+            confetti({ 
+                particleCount: 80, 
+                spread: 100, 
+                origin: { x: 0.2, y: 0.8 }, 
+                zIndex: 10001 
+            });
+            confetti({ 
+                particleCount: 80, 
+                spread: 100, 
+                origin: { x: 0.8, y: 0.8 }, 
+                zIndex: 10001 
+            });
+        }, 300);
     };
 
     const handleComplete = () => {
@@ -142,11 +167,10 @@ export const JourneyPlayer: React.FC = () => {
     };
 
     const handleEnded = () => {
-        if (isCompleted) return;
+        if (isCompleted || hasAdvancedRef.current) return;
+        hasAdvancedRef.current = true;
         if (segmentIndex < segments.length - 1) {
             setSegmentIndex(prev => prev + 1);
-            setCurrentTime(0);
-            setIsPlaying(true);
         } else {
             triggerCompletion();
         }
@@ -193,54 +217,54 @@ export const JourneyPlayer: React.FC = () => {
                 animate={{ opacity: 1 }}
                 className="fixed inset-0 z-[300] bg-[#121212] flex flex-col items-center justify-center p-6 text-center"
             >
-                {/* Subtle green glow bg */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(29,185,84,0.15)_0%,_transparent_70%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(29,185,84,0.12)_0%,_transparent_70%)] opacity-50" />
 
                 <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                    className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full"
+                    initial={{ scale: 0.9, opacity: 0, y: 30 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 180, damping: 20 }}
+                    className="relative z-10 flex flex-col items-center max-w-sm w-full"
                 >
-                    {/* Big green checkmark circle */}
-                    <div className="w-24 h-24 rounded-full bg-[#1db954] flex items-center justify-center shadow-[0_0_60px_rgba(29,185,84,0.4)]">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                            <motion.path
-                                d="M5 13l4 4L19 7"
-                                stroke="black"
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                initial={{ pathLength: 0 }}
-                                animate={{ pathLength: 1 }}
-                                transition={{ delay: 0.4, duration: 0.5 }}
-                            />
-                        </svg>
+                    <div className="mb-1.5">
+                        <h1 className="text-2xl md:text-2xl font-black text-white leading-[0.9] tracking-tighter uppercase">
+                            YOU ARE NOW <br />
+                            <span className="text-[#1db954] italic">READY.</span>
+                        </h1>
                     </div>
 
-                    <div>
-                        <p className="text-[#1db954] text-xs font-bold tracking-[0.3em] uppercase mb-3 text-center w-full">Learning Milestone</p>
-                        <h1 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
-                            YOU ARE NOW READY.
-                        </h1>
-                        <p className="text-white/50 text-base leading-relaxed">
-                            Session 1 completed.<br />
-                            Streak updated to <span className="text-[#1db954] font-bold">{(state.streak || 0) + 1} days</span>.
+                    <div className="mb-2 max-w-sm">
+                        <p className="text-white/60 text-[10px] md:text-xs leading-relaxed">
+                            Congratulations, <span className="text-white font-bold">{state.userName || 'Learner'}</span>! You've completed your first session in <span className="text-white font-bold">Spotify Beta.</span>
                         </p>
                     </div>
 
-                    <div className="flex flex-col gap-3 w-full max-w-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 w-full mb-3">
+                        <div className="bg-[#1a1a1a] rounded-[12px] p-2 py-3 border border-white/5 flex flex-col items-center justify-center shadow-lg">
+                            <p className="text-[7px] font-black uppercase text-white/30 tracking-widest mb-0.5">Session</p>
+                            <p className="text-sm font-black text-white uppercase italic">#1 DONE</p>
+                        </div>
+                        <div className="bg-[#1a1a1a] rounded-[12px] p-2 py-3 border border-white/5 flex flex-col items-center justify-center shadow-lg">
+                            <p className="text-[7px] font-black uppercase text-white/30 tracking-widest mb-0.5">XP Gained</p>
+                            <p className="text-sm font-black text-[#1db954]">+500 XP</p>
+                        </div>
+                        <div className="bg-[#0f2414] rounded-[12px] p-2 py-3 border border-[#1db954]/20 flex flex-col items-center justify-center shadow-lg">
+                            <p className="text-[7px] font-black uppercase text-[#1db954] tracking-widest mb-0.5">Status</p>
+                            <p className="text-sm font-black text-white uppercase italic">Ascending</p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-2.5 w-full">
                         <button
                             onClick={continueLearning}
-                            className="bg-[#1db954] hover:bg-[#1ed760] text-black font-black text-xs py-4 px-10 rounded-full hover:scale-105 active:scale-95 transition-all tracking-widest uppercase"
+                            className="bg-[#1db954] hover:bg-[#1db954]/90 text-black font-black text-[10px] md:text-[11px] py-2.5 px-6 rounded-full transform transition-all hover:scale-105 active:scale-95 shadow-xl uppercase tracking-tighter"
                         >
-                            Continue Learning
+                            CONTINUE YOUR JOURNEY →
                         </button>
                         <button
                             onClick={resetJourney}
-                            className="bg-white/10 hover:bg-white/20 text-white font-black text-xs py-4 px-10 rounded-full hover:scale-105 active:scale-95 transition-all tracking-widest uppercase border border-white/10"
+                            className="text-white/40 hover:text-white font-bold text-[8px] uppercase tracking-widest transition-colors"
                         >
-                            Back to Home
+                            BACK TO HOME SCREEN
                         </button>
                     </div>
                 </motion.div>
@@ -329,7 +353,7 @@ export const JourneyPlayer: React.FC = () => {
                         transition={{ delay: 0.05 }}
                         className="text-white/50 text-base font-medium mt-2"
                     >
-                        {currentSegment.artist} • Module {segmentIndex + 1}/4
+                        {currentSegment.artist} • Module {segmentIndex + 1}/{segments.length}
                     </motion.p>
                 </div>
             </div>
