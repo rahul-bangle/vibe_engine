@@ -15,7 +15,8 @@ import { OnboardingPopUp } from './OnboardingPopUp';
 export const Dashboard: React.FC = () => {
     const { featuredPlaykits, categories } = useSpotify();
     const { state, selectCategory, setActiveFilter, playTrack, updateOnboardingStep } = useJourney();
-    const { trackEvent } = useTracking();
+    const [isReviewOpen, setIsReviewOpen] = useState(false);
+    const { interactionCount, trackEvent } = useTracking();
     const [podcastSections, setPodcastSections] = useState<{ title: string; items: any[] }[]>([]);
     const [musicSections, setMusicSections] = useState<{ title: string; items: any[] }[]>([]);
     const [allSections, setAllSections] = useState<{ title: string; items: any[] }[]>([]);
@@ -23,7 +24,18 @@ export const Dashboard: React.FC = () => {
     const [artistsList, setArtistsList] = useState<{ title: string; items: any[] }[]>([]);
     const [recentTracks, setRecentTracks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isReviewOpen, setIsReviewOpen] = useState(false);
+    const hasAutoOpenedRef = React.useRef(false);
+
+    // Fire modal at 8 interactions OR after first journey completion
+    useEffect(() => {
+        if (hasAutoOpenedRef.current) return;
+        const completedCount = Object.keys(state.completionHistory).length;
+        const shouldOpen = interactionCount >= 8 || completedCount >= 1;
+        if (shouldOpen) {
+            hasAutoOpenedRef.current = true;
+            setTimeout(() => setIsReviewOpen(true), 1500);
+        }
+    }, [interactionCount, state.completionHistory]);
 
     const scrollRefs = React.useRef<{ [key: string]: HTMLDivElement | null }>({});
     const activeFilter = state.activeFilter;
