@@ -315,21 +315,21 @@ export const Dashboard: React.FC = () => {
                             <>
                                 {Object.keys(state.completionHistory).length === 1 && (
                                     <motion.div
-                                        initial={{ opacity: 0, y: -20 }}
+                                        initial={{ opacity: 0, y: -10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="mb-8 p-6 rounded-[2rem] bg-gradient-to-r from-primary/20 via-primary/5 to-transparent border border-primary/20 flex flex-col md:flex-row items-center justify-between gap-6"
+                                        className="mb-4 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary/20 via-primary/5 to-transparent border border-primary/20 flex flex-row items-center justify-between gap-4"
                                     >
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(29,185,84,0.3)]">
-                                                <SpotifyIcon color="black" size={32} />
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(29,185,84,0.3)] flex-shrink-0">
+                                                <SpotifyIcon color="black" size={18} />
                                             </div>
                                             <div>
-                                                <h3 className="text-2xl font-black text-white tracking-tighter uppercase">Evolution Complete!</h3>
-                                                <p className="text-primary font-bold text-sm">Congratulations! You've finished your first learning journey.</p>
+                                                <h3 className="text-sm font-black text-white tracking-tighter uppercase leading-tight">Evolution Complete!</h3>
+                                                <p className="text-primary font-bold text-xs">Congratulations! You've finished your first learning journey.</p>
                                             </div>
                                         </div>
-                                        <p className="text-text-subdued text-sm font-medium max-w-sm text-center md:text-right">
-                                            Keep leading and listening with Spotify. Your next session is ready whenever you are.
+                                        <p className="text-text-subdued text-xs font-medium text-right hidden md:block max-w-[200px]">
+                                            Your next session is ready whenever you are.
                                         </p>
                                     </motion.div>
                                 )}
