@@ -10,6 +10,7 @@ import { useTracking } from '../hooks/useTracking';
 import { spotifyService } from '../services/spotifyService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OnboardingPopUp } from './OnboardingPopUp';
+import { ReviewModal } from './ReviewModal';
 import { SpotifyIcon } from './icons/SpotifyIcon';
 import { WelcomeBanner } from './WelcomeBanner';
 import type { Track, Playlist } from '../services/spotifyService';
@@ -1022,7 +1023,9 @@ export const MobileLayout: React.FC = () => {
   const miniAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const { state, updateOnboardingStep, setGlobalPlaying } = useJourney();
-  const { trackEvent } = useTracking();
+  const { trackEvent, interactionCount } = useTracking();
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const hasAutoOpenedRef = React.useRef(false);
 
   const miniPlaying = state.isGlobalPlaying;
   const setMiniPlaying = (v: boolean) => setGlobalPlaying(v);
@@ -1049,6 +1052,17 @@ export const MobileLayout: React.FC = () => {
   useEffect(() => {
     if (miniAudioRef.current) miniAudioRef.current.volume = miniVolume;
   }, [miniVolume]);
+
+  // Fire modal at 8 interactions OR after first journey completion
+  useEffect(() => {
+    if (hasAutoOpenedRef.current) return;
+    const completedCount = Object.keys(state.completionHistory || {}).length;
+    const shouldOpen = interactionCount >= 8 || completedCount >= 1;
+    if (shouldOpen) {
+      hasAutoOpenedRef.current = true;
+      setTimeout(() => setIsReviewOpen(true), 1500);
+    }
+  }, [interactionCount, state.completionHistory]);
 
   const handlePlayTrack = (track: Track | Playlist) => {
     setMiniTrack(track as Track);
@@ -1195,6 +1209,8 @@ export const MobileLayout: React.FC = () => {
           })}
         </nav>
       </div>
+
+      <ReviewModal isOpen={isReviewOpen} onClose={() => setIsReviewOpen(false)} />
     </div>
   );
 };
