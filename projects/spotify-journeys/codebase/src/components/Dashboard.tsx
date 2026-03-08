@@ -333,7 +333,7 @@ export const Dashboard: React.FC = () => {
                                         </p>
                                     </motion.div>
                                 )}
-                                <section className="relative w-full h-[200px] md:h-[260px] rounded-3xl overflow-hidden group shadow-2xl transition-all duration-700 hover:shadow-primary/10">
+                                <section className="relative w-full min-h-[220px] md:min-h-[280px] rounded-3xl overflow-hidden group shadow-2xl transition-all duration-700 hover:shadow-primary/10">
                                 {activeFilter === 'Journeys' ? (
                                     <div className="relative w-full h-full">
                                         <div className="absolute inset-0 bg-gradient-to-br from-[#0c0c0c] via-[#1a1a1a] to-[#2d1e4e]" />
